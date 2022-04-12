@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdio.h>
+#include "../libs/servidor.h"
 
 // Verify If Bin Files Exists
 int verifyBinFiles(char* path){
@@ -43,8 +45,10 @@ int main(int argc, char* argv[]) {
         write(2, "CONFIG FILE NOT FOUND!\n", 24);
         return -1;
     }
+    SERVER server = createServer(argv[1]);
+    printServerStatus(server);
     //Bin Files Verification
-    if(!verifyBinFiles(argv[2]))return -1;
+    //if(!verifyBinFiles(argv[2]))return -1;
 
     return 1;
 }
