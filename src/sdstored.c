@@ -8,9 +8,8 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    if (access(argv[1], F_OK) == -1)
-    {
-        write(2, "argv[1]: FILE NOT FOUND!\n", 26);
+    if (access(argv[1], F_OK) == -1){
+        write(2, "CONFIG FILE NOT FOUND!\n", 24);
     }
 
     //argv[1] -> caminho para ficheiro de configuração
