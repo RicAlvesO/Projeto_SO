@@ -9,7 +9,7 @@
 // Verify If Bin Files Exists
 int verifyBinFiles(char* path){
     int flag = 1;
-    char *bins[]={"bcompress","bdecompress","decrypt","encrypt","gcompress","gdecompress","nop"};
+    char *bins[]={"/bcompress","/bdecompress","/decrypt","/encrypt","/gcompress","/gdecompress","/nop"};
     for(int i=0; i<7; i++){
     
         // Create file destinations
@@ -49,7 +49,12 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     //Bin Files Verification
-    //if(!verifyBinFiles(argv[2]))return -1;
+    /*
+    * Verifies the folder in the argument 
+    * To work bins should be generated prior to using this program
+    * To generate run `make` on libs folder
+    */
+    if(!verifyBinFiles(argv[2]))return -1;
 
     SERVER server = createServer(argv[1]); //crio o server a partir do ficheiro de config
     //printServerStatus(server);

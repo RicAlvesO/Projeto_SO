@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+// Reads char from certain file descriptor
 int readChar(int fd, char* c) {
     int ret = read(fd, c, 1);
 
     return ret;
 }
 
+// Reads line from certain file descriptor
 ssize_t readln(int fd, char* line, size_t size) {
     char c;
     int i=0;
