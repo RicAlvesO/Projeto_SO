@@ -16,8 +16,8 @@ obj/servidor.o: src/servidor.c libs/servidor.h
 obj/funcoes.o: src/funcoes.c libs/funcoes.h
 	gcc -Wall -g -c src/funcoes.c -o obj/funcoes.o
 
-bin/sdstore: obj/sdstore.o
-	gcc -g -o bin/sdstore obj/sdstore.o
+bin/sdstore: obj/sdstore.o obj/servidor.o obj/funcoes.o
+	gcc -g -o bin/sdstore obj/sdstore.o obj/servidor.o obj/funcoes.o
 
 obj/sdstore.o: src/sdstore.c
 	gcc -Wall -g -c src/sdstore.c -o obj/sdstore.o

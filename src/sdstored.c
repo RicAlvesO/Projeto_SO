@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include "../libs/servidor.h"
 
 // Verify If Bin Files Exists
@@ -34,6 +35,8 @@ int verifyBinFiles(char* path){
 
 // Main Function
 int main(int argc, char* argv[]) {
+    char* myfifo = "myfifo";
+    int fd;
     
     // Argument Verifications
     if (argc != 3){
@@ -49,7 +52,22 @@ int main(int argc, char* argv[]) {
     //if(!verifyBinFiles(argv[2]))return -1;
 
     SERVER server = createServer(argv[1]); //crio o server a partir do ficheiro de config
-    printServerStatus(server);
+    //printServerStatus(server);
+
+    mkfifo(myfifo,0666);
+
+    while(1) {
+        int c = -1;
+        fd = open(myfifo, O_RDONLY);
+        read(fd, &c, sizeof(int));
+        close(fd);
+        if (c==0) { // 0 -> ler status, logo passamos a struct server
+            fd = open(myfifo, O_WRONLY);
+            writeServer(server,fd);
+            close(fd);
+        }
+
+    }
 
     /*
     CODIGO PARA TESTAR, mostra que funciona transmitir o estado do servidor por pipes
