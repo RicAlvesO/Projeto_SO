@@ -69,25 +69,25 @@ void printServerStatus(SERVER server) {
 /*
 Recebe uma struct server do fifo
 */
-SERVER readServer() {
+SERVER readServer(int fd) {
     //o ficheiro começa fechado, é preciso abrir
     //ja sabemos o path do fifo
     
-    if(mkfifo("pipe.fifo", 0666) != 0 && errno != EEXIST) {
-        write(2,"nao conseguiu criar FIFO 'pipe.fifo': ",39);
-    }
+    //if(mkfifo("pipe.fifo", 0666) != 0 && errno != EEXIST) {
+    //    write(2,"nao conseguiu criar FIFO 'pipe.fifo': ",39);
+    //}
 
-    int fd = open("pipe.fifo",O_RDONLY);
-    if (fd < 0) {
-        write(2, "nao conseguiu abrir FIFO 'pipe.fifo' para ler: ", 48);
-    }
+    //int fd = open("pipe.fifo",O_RDONLY);
+    //if (fd < 0) {
+    //    write(2, "nao conseguiu abrir FIFO 'pipe.fifo' para ler: ", 48);
+    //}
 
     SERVER server = malloc(sizeof(struct server));
     if (read(fd, server, sizeof(struct server)) != sizeof(struct server)) {
         write(2, "nao conseguiu ler do fifo: ", 28);
     }
 
-    close(fd);
+    //é da responsabilidade do utilizador fechar o fd
 
     return server;
 }
@@ -95,21 +95,25 @@ SERVER readServer() {
 /*
 Escreve uma struct server para o fifo
 */
-void writeServer(SERVER server) {
+void writeServer(SERVER server, int fd) {
 
-    if(mkfifo("pipe.fifo", 0666) != 0 && errno != EEXIST) {
-        write(2,"nao conseguiu criar FIFO 'pipe.fifo': ",39);
-    }
+    //if(mkfifo("pipe.fifo", 0666) != 0 && errno != EEXIST) {
+    //    write(2,"nao conseguiu criar FIFO 'pipe.fifo': ",39);
+    //}
 
-    int fd = open("pipe.fifo",O_WRONLY);
-    if (fd < 0) {
-        write(2, "nao conseguiu abrir FIFO 'pipe.fifo' para escrever: ", 53);
-    }
+    //int fd = open("pipe.fifo",O_WRONLY);
+    //if (fd < 0) {
+    //    write(2, "nao conseguiu abrir FIFO 'pipe.fifo' para escrever: ", 53);
+    //}
 
     if (write(fd, server, sizeof(struct server)) != sizeof(struct server)) {
         write(2, "nao conseguiu escrever no fifo: ", 33);
     }
 
-    //cabe ao utilizador dar free a este server.
-    close(fd);
+    //cabe ao utilizador dar free a este server, e fechar o fd.
+}
+
+void freeServer(SERVER* server) {
+    free(*server); //os arrays dentro da struct desaparecem quando se sai do scope?
+    *server = NULL;
 }

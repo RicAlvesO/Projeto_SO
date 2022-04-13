@@ -45,10 +45,33 @@ int main(int argc, char* argv[]) {
         write(2, "CONFIG FILE NOT FOUND!\n", 24);
         return -1;
     }
-    SERVER server = createServer(argv[1]);
-    printServerStatus(server);
     //Bin Files Verification
     //if(!verifyBinFiles(argv[2]))return -1;
+
+    SERVER server = createServer(argv[1]); //crio o server a partir do ficheiro de config
+    printServerStatus(server);
+
+    /*
+    CODIGO PARA TESTAR, mostra que funciona transmitir o estado do servidor por pipes
+    ---------------------------------------------------------------------
+    int fds[2];
+    pipe(fds);
+    if (fork() == 0) {
+        //codigo filho, consumidor
+        close(fds[1]);
+        SERVER server1 = readServer(fds[0]);
+        printf("[SERVER1]: \n");
+        printServerStatus(server1);
+    } else {
+        //codigo pai, produtor
+        close(fds[0]);
+        SERVER server = createServer(argv[1]); //crio o server a partir do ficheiro de config
+        writeServer(server, fds[1]); //escrevo o server para a pipe sem nome
+        freeServer(&server); //dou free ao server
+        close(fds[1]);
+    }
+    --------------------------------------------------------------------
+    */
 
     return 1;
 }
