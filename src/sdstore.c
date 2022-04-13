@@ -1,6 +1,8 @@
 //Programa cliente
 #include <unistd.h>
 #include <fcntl.h>
+#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include "../libs/servidor.h"

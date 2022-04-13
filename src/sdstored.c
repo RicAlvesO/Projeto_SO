@@ -14,6 +14,7 @@ int verifyBinFiles(char* path){
     
         // Create file destinations
         char str[(sizeof(bins[i]) + sizeof(path)) / sizeof(char)] = "";
+        if(path[strlen(path)-1]=="/")path[strlen(path)-1]="\0";
         strcat(str, path);
         strcat(str, bins[i]);
         
