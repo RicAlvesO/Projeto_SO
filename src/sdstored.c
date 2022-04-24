@@ -3,8 +3,10 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/stat.h>
+#include <sys/stat.h> //mkfifo
+#include <sys/wait.h> //waitpid e WNOHANG
 #include "../libs/servidor.h"
+#include "../libs/pedido.h"
 
 // Verify If Bin Files Exists
 int verifyBinFiles(char* path){
@@ -61,19 +63,60 @@ int main(int argc, char* argv[]) {
     //printServerStatus(server);
 
     mkfifo(myfifo,0666);
+    int fds[2];
+    pipe(fds);
 
-    while(1) {
-        int c = -1;
-        fd = open(myfifo, O_RDONLY);
-        read(fd, &c, sizeof(int));
-        close(fd);
-        if (c==0) { // 0 -> ler status, logo passamos a struct server
-            fd = open(myfifo, O_WRONLY);
-            writeServer(server,fd);
-            close(fd);
+    switch(fork()) {
+        case -1:
+            printf("erro\n");
+            break;
+        case 0:
+            int pid, status, tamanhoPedido;
+            PEDIDO pedido;
+            //codigo filho,  gere os pedidos, recebe pedidos novos do pai
+            int retval = fcntl(fds[0], F_SETFL, fcntl(fds[0], F_GETFL) | O_NONBLOCK);
+            printf("Ret from fcntl: %d\n", retval);
+            /*
+            Este ciclo while serve para gerir os pedidos
+            Ele a todo o momento verifica se algum pedido acabou (waitpid), e se de facto acabou ele atualiza
+            */
+            while(1) {
+                while ((pid = waitpid(-1,&status,WNOHANG)) > 0) { //enquanto houverem pedidos terminados
+                    printf("Acabou um pedido\n");
+                }
+                while ((pedido = readPedido(fds[0])) != NULL) { //enquanto houver pedidos
+                    printf("Leu um pedido\n");
+                    //printPedido(pedido);
+
+                }
+
+                usleep(50000); //espera 50 milissegundos
+            }
+            break;
+        default:
+            //codigo pai, apenas le input dos clientes, e manda os inputs para o processo que gere os pedidos
+            close (fds[0]); //pai so vai escrever os pedidos para o gestor de pedidos
+            while(1) {
+                int c = -1;
+                fd = open(myfifo, O_RDONLY);
+                read(fd, &c, sizeof(int));
+                //close(fd);
+                if (c==0) { // 0 -> ler status, logo passamos a struct server
+                    close(fd);
+                    fd = open(myfifo, O_WRONLY);
+                    writeServer(server,fd);
+                } else if (c==1) {
+                    /*
+                    Se c == 1, então é para ler um pedido, por isso logo asseguir le um pedido do fifo.
+                    Depois de ler o pedido, escreve o pedido para o processo que gere os pedidos (pelo fds[1]);
+                    */
+                    PEDIDO pedido = readPedido(fd);
+                    writePedido(pedido,fds[1]);
+                }
+                close(fd);
+            }
+            break;
         }
-
-    }
 
     /*
     CODIGO PARA TESTAR, mostra que funciona transmitir o estado do servidor por pipes
