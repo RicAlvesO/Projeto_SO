@@ -89,7 +89,7 @@ char* getPedidoStr(PEDIDO p) {
     tamanhoStr += strlen(p->outputPath) + 1; //tamanho do outputPath mais o espaço
 
     for (i=0; i<p->ntransformacoes; i++) {
-        tamanhoStr += strlen(p->transformacoes[i]); //tamanho do argumento
+        tamanhoStr += strlen(code_to_transf(p->transformacoes[i])); //tamanho do argumento
         tamanhoStr ++; //o tamanho do espaço
     }
     char prio[2];
@@ -216,7 +216,7 @@ char *code_to_transf(int cd)
         return "bcompress";
         break;
     default:
-        return EOF; // ERROR TRANSF NOT FOUND
+        return "\0"; // ERROR TRANSF NOT FOUND
         break;
     }
 }
