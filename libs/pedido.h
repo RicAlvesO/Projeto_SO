@@ -6,3 +6,7 @@ PEDIDO createPedido(int prio, char* inputPath, char* outputPath, int ntransf, ch
 void writePedido(PEDIDO pedido, int fd);
 PEDIDO readPedido(int fd);
 void printPedido(PEDIDO p);
+char* getPedidoStr(PEDIDO p);
+int getNTransformacoes(PEDIDO p);
+int ocorrenciasTransformacao(PEDIDO p, char* transf);
+void executarPedido(PEDIDO p);

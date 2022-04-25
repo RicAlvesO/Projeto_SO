@@ -16,6 +16,8 @@ struct server {
     int maximo[10]; //array com o maximo de ocorrencias de cada transformação
     int atual[10]; //array com a utilizaçao atual de cada transformação
     int ntransformacoes;
+    int tamanhoPedidos;
+    char pedidos[];
 };
 
 /*

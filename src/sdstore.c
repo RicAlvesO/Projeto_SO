@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
     } else if (argc > 2 && strcmp(argv[1],"proc-file") == 0) {
         //Apply transformations
         printf("[CLIENTE]: entrou\n");
+
         int priority = atoi(argv[2]);
         char* inputPath = argv[3];
         char* outputPath = argv[4];

@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define MAX_TRANSFORMATION_SIZE 20
+
 struct pedido{
     int pid; //pid do processo que esta a realizar o pedido.
     /*
@@ -14,7 +16,7 @@ struct pedido{
     char inputPath[50];
     char outputPath[50];
     int ntransformacoes; //numero de transformacoes
-    char transformacoes[][20]; //nao sabemos quantas transformações existem, mas cada uma tem 20 chars de tamanho no maximo
+    char transformacoes[][MAX_TRANSFORMATION_SIZE]; //nao sabemos quantas transformações existem, mas cada uma tem 20 chars de tamanho no maximo
 };
 
 PEDIDO createEmptyPedido() {
@@ -76,4 +78,59 @@ void printPedido(PEDIDO p) {
     for (int i = 0; i<p->ntransformacoes; i++) {
         printf("Transformacao - %s\n", p->transformacoes[i]);
     }
+}
+
+char* getPedidoStr(PEDIDO p) {
+    int tamanhoStr = 0, i;
+    tamanhoStr += strlen("proc-file") + 1; //tamanho do proc-file mais o espaço
+    tamanhoStr += 2; //a prioridade e o espaço
+    tamanhoStr += strlen(p->inputPath) + 1; //tamanho do inputPath mais o espaço
+    tamanhoStr += strlen(p->outputPath) + 1; //tamanho do outputPath mais o espaço
+
+    for (i=0; i<p->ntransformacoes; i++) {
+        tamanhoStr += strlen(p->transformacoes[i]); //tamanho do argumento
+        tamanhoStr ++; //o tamanho do espaço
+    }
+    char prio[2];
+    sprintf(prio, "%d",p->prioridade);
+
+    char* str = malloc(sizeof(char) * tamanhoStr);
+    str[0] = '\0';
+    strcat(str, "proc-file ");
+    strcat(str, prio); strcat(str, " ");
+    strcat(str, p->inputPath); strcat(str, " ");
+    strcat(str, p->outputPath); strcat(str, " ");
+    for(i=0; i<p->ntransformacoes; i++) {
+        strcat(str, p->transformacoes[i]);
+        strcat(str, " ");
+    }
+    return str;
+}
+
+int getNTransformacoes(PEDIDO p) {
+    return p->ntransformacoes;
+}
+
+//retorna o numero de ocorrencias de uma certa transformação num pedido
+int ocorrenciasTransformacao(PEDIDO p, char* transf) {
+    int sum=0, ntransf = p->ntransformacoes, i;
+
+    for (i=0; i<ntransf; i++) {
+        if (strcmp(transf, p->transformacoes[i]) == 0) sum++;
+    }
+    return sum;
+}
+
+/*
+Executa o pedido p no processo atual
+*/
+void executarPedido(PEDIDO p) {
+    
+    if (fork() == 0) {
+        printf("[PEDIDO]: Vou dormir\n");
+        sleep(3);
+        printf("[PEDIDO]: Dormi\n");
+        _exit(0);
+    }
+
 }

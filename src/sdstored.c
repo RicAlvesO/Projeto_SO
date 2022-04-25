@@ -7,6 +7,7 @@
 #include <sys/wait.h> //waitpid e WNOHANG
 #include "../libs/servidor.h"
 #include "../libs/pedido.h"
+#include "../libs/gestor_pedidos.h"
 
 // Verify If Bin Files Exists
 int verifyBinFiles(char* path){
@@ -71,8 +72,9 @@ int main(int argc, char* argv[]) {
             printf("erro\n");
             break;
         case 0:
-            int pid, status, tamanhoPedido;
+            int pid, status;
             PEDIDO pedido;
+            GESTOR_PEDIDOS gp = createGestorPedidos(30, argv[1]);
             //codigo filho,  gere os pedidos, recebe pedidos novos do pai
             int retval = fcntl(fds[0], F_SETFL, fcntl(fds[0], F_GETFL) | O_NONBLOCK);
             printf("Ret from fcntl: %d\n", retval);
@@ -86,6 +88,9 @@ int main(int argc, char* argv[]) {
                 }
                 while ((pedido = readPedido(fds[0])) != NULL) { //enquanto houver pedidos
                     printf("Leu um pedido\n");
+                    char* str = getPedidoStr(pedido);
+                    printf("pedido - %s\n", str);
+                    inserirPedido(gp, pedido);
                     //printPedido(pedido);
 
                 }

@@ -1,5 +1,4 @@
 
-
 typedef struct server * SERVER;
 
 SERVER createServer(char* config_file);
