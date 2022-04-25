@@ -20,6 +20,6 @@ int getNTransformacoes(PEDIDO p);
 int ocorrenciasTransformacao(PEDIDO p, int transf);
 void executarPedido(PEDIDO p);
 void setPid(PEDIDO p,int pid);
-int transf_to_code(char transf) 
-char* code_to_transf(int cd)
+int transf_to_code(char *transf); 
+char* code_to_transf(int cd);
 void free_pedido(PEDIDO p);

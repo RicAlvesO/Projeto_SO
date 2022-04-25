@@ -153,7 +153,7 @@ void setPid(PEDIDO p,int pid) {
 }
 
 // Traduz transformacoes para o seu codigo de inteiro
-int transf_to_code(char transf)
+int transf_to_code(char* transf)
 {
     if (strcasecmp(transf, "nop") == 0)
     {
