@@ -21,6 +21,7 @@ char* getAllPedidosStr(PEDIDO* pedidos, int N, int* tamanhoStr);
 int getNTransformacoes(PEDIDO p);
 int ocorrenciasTransformacao(PEDIDO p, int transf);
 void executarPedido(PEDIDO p);
+void setPedidoNth(PEDIDO p, int nth);
 void setPid(PEDIDO p,int pid);
 int transf_to_code(char *transf); 
 char* code_to_transf(int cd);

@@ -81,6 +81,7 @@ Printa o estado do server
 void printServerStatus(SERVER server) {
     printf("A printar o Server\n");
     int i=0, max = 7;
+    printf("%s", server->pedidos);
     for (;i<max;i++) {
         int maximo = server->maximo[i];
         int atual = server->atual[i];
@@ -104,14 +105,20 @@ SERVER readServer(int fd) {
     //    write(2, "nao conseguiu abrir FIFO 'pipe.fifo' para ler: ", 48);
     //}
 
-    SERVER server = malloc(sizeof(struct server));
-    if (read(fd, server, sizeof(struct server)) != sizeof(struct server)) {
+    SERVER server1 = malloc(sizeof(struct server));
+    if (read(fd, server1, sizeof(struct server)) != sizeof(struct server)) {
+        write(2, "nao conseguiu ler do fifo: ", 28);
+    }
+    SERVER server2 = malloc(sizeof(struct server) + server1->tamanhoPedidosStr);
+    *server2 = *server1;
+    free(server1);
+    if (read(fd, server2->pedidos, server2->tamanhoPedidosStr) != server2->tamanhoPedidosStr) {
         write(2, "nao conseguiu ler do fifo: ", 28);
     }
 
     //é da responsabilidade do utilizador fechar o fd
 
-    return server;
+    return server2;
 }
 
 /*
@@ -128,7 +135,7 @@ void writeServer(SERVER server, int fd) {
     //    write(2, "nao conseguiu abrir FIFO 'pipe.fifo' para escrever: ", 53);
     //}
 
-    if (write(fd, server, sizeof(struct server)) != sizeof(struct server)) {
+    if (write(fd, server, sizeof(struct server) + server->tamanhoPedidosStr) != (sizeof(struct server) + server->tamanhoPedidosStr)) {
         write(2, "nao conseguiu escrever no fifo: ", 33);
     }
 

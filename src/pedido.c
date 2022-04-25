@@ -8,6 +8,7 @@
 
 struct pedido{
     int pid; //pid do processo que esta a realizar o pedido.
+    int nth; //quantos pedidos fizeram antes deste + 1
     /*
     int usadas[10]; -> guarda a quantidade de cada transformação que o pedido usa.
     Por exemplo se o pedido usa 3 nops, o indice respetivo da operação nop teria um 3, e o resto das posiçoes teriam 0.
@@ -89,6 +90,7 @@ Recebe um pedido e devolve o tamanho do pedido representado em string
 */
 int getTamanhoPedidoStr(PEDIDO p) {
     int tamanhoStr = 0, i;
+    tamanhoStr += 8 + (p->nth < 10 ? 1 : 2); //'task #x: ' sao 9 ou 10 caracteres dependendo se o x é de 1-9 ou 10 pra cima
     tamanhoStr += strlen("proc-file") + 1; //tamanho do proc-file mais o espaço
     tamanhoStr += 2; //a prioridade e o espaço
     tamanhoStr += strlen(p->inputPath) + 1; //tamanho do inputPath mais o espaço
@@ -106,14 +108,16 @@ char* getPedidoStr(PEDIDO p) {
     int tamanhoStr = getTamanhoPedidoStr(p), i;
     char* str = malloc(sizeof(char) * tamanhoStr); //aloca uma string com espaço para o pedido todo em forma de string
     
-    char prio[2];
-    sprintf(prio, "%d",p->prioridade);
+    char numeroEmString[3];
 
     str[0] = '\0';
-    strcat(str, "proc-file ");
-    strcat(str, prio); strcat(str, " ");
-    strcat(str, p->inputPath); strcat(str, " ");
-    strcat(str, p->outputPath); strcat(str, " ");
+    sprintf(numeroEmString, "%d",p->nth);
+    strcat(str, "task #"); strcat(str, numeroEmString); strcat(str, ": "); //'task #x: '
+    strcat(str, "proc-file "); //'proc-file '
+    sprintf(numeroEmString, "%d",p->prioridade);
+    strcat(str, numeroEmString); strcat(str, " "); //'x '
+    strcat(str, p->inputPath); strcat(str, " "); //'caminho_entrada '
+    strcat(str, p->outputPath); strcat(str, " "); //'caminho_saida '
     for(i=0; i<p->ntransformacoes; i++) {
         strcat(str, code_to_transf(p->transformacoes[i]));
         strcat(str, " ");
@@ -188,6 +192,10 @@ void executarPedido(PEDIDO p) {
 
 void setPid(PEDIDO p,int pid) {
     p->pid = pid;
+}
+
+void setPedidoNth(PEDIDO p, int nth) {
+    p->nth = nth;
 }
 
 // Traduz transformacoes para o seu codigo de inteiro

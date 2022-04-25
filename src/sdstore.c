@@ -49,7 +49,7 @@ int requests(int argc, char* argv[]){
 }
 
 int main(int argc, char* argv[]) {
-    int fd, x;
+    int fd, x, i=0;
     char* myfifo = "myfifo";
 
     if (argc==1) {
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
             transformacoes[i] = argv[i + 5];
         }
         printf("[CLIENTE]: A criar pedido\n");
-        PEDIDO pedido = createPedido(priority, inputPath, outputPath, ntransf, transformacoes);
+        PEDIDO pedido = createPedido(priority, inputPath, outputPath, ntransf, transformacoes); i++;
         printf("[CLIENTE]: Criou pedido\n");
 
         mkfifo(myfifo,0666);
