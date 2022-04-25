@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
         case 0:
             int pid, status;
             PEDIDO pedido;
-            GESTOR_PEDIDOS gp = createGestorPedidos(30, argv[1]);
+            GESTOR_PEDIDOS gp = createGestorPedidos(argv[1]);
             //codigo filho,  gere os pedidos, recebe pedidos novos do pai
             int retval = fcntl(fds[0], F_SETFL, fcntl(fds[0], F_GETFL) | O_NONBLOCK);
             printf("Ret from fcntl: %d\n", retval);

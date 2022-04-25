@@ -7,12 +7,11 @@
 #include <unistd.h>
 #include <fcntl.h> //open
 
-struct gestor_pedidos {
 
-    char transformacoes[10][20]; //Assume-se que cada transformação tem 20 caracteres no maximo
-    int maximo[10]; //array com o maximo de ocorrencias de cada transformação
-    int atual[10]; //array com a utilizaçao atual de cada transformação
-    int ntransformacoes;
+struct gestor_pedidos {
+    
+    int maximo[7]; //array com o maximo de ocorrencias de cada transformação
+    int atual[7]; //array com a utilizaçao atual de cada transformação
     
     int nPedidosMax; //numero de pedidos maximo
     int nPedidosEmExecucao; //numero de pedidos em execucao
@@ -24,14 +23,12 @@ struct gestor_pedidos {
 /*
 Cria o gestor de pedidos
 */
-GESTOR_PEDIDOS createGestorPedidos(int pedidosMax, char* config_file) {
+GESTOR_PEDIDOS createGestorPedidos( char* config_file) {
     //Cria o gestor estando os dois arrays vazios, mas com espaço para o numero de pedidos maximo
-    GESTOR_PEDIDOS gestor = (GESTOR_PEDIDOS) malloc(sizeof(struct gestor_pedidos)
-     + pedidosMax * sizeof(PEDIDO) //alocar espaço para o array pedidosEmExecucao
-     + pedidosMax * sizeof(PEDIDO)); //alocar espaço para o array pedidosEmEspera
-
-    int fd = open(config_file, O_RDONLY, 0666), i=0;
+    GESTOR_PEDIDOS gestor = (GESTOR_PEDIDOS) malloc(sizeof(struct gestor_pedidos)); 
+    int fd = open(config_file, O_RDONLY, 0666),i=0;
     char buffer[50];
+    int pedidosMax=0;
 
     while (readln(fd, buffer, 50) > 0) { //enquanto nao chega a EOF...
         /* Assume-se que o ficheiro está bem parsado
@@ -44,18 +41,19 @@ GESTOR_PEDIDOS createGestorPedidos(int pedidosMax, char* config_file) {
         */
         char* transf = strtok(buffer, " "); //strtok pode dar problemas com varios processos?
         int max = atoi(strtok(NULL, " "));
-
-        strcpy(gestor->transformacoes[i], transf); //copia a operação para a matriz de operações
+        i=transf_to_code(transf);
+        // Caso apareca transformação desconhecida
+        if(i==-1){
+            write(2,"ERROR: UNKNOWN TRANSFORMATION IN CONFIGURATION FILE!!!",55);
+        }
         gestor->maximo[i] = max;
+        pedidosMax+=max;
         gestor->atual[i] = 0;
-        i++;
     }
-    gestor->ntransformacoes = i;
     close(fd);
 
-    gestor->pedidosEmExecucao = (PEDIDO*)(((char *) gestor) + sizeof(struct gestor_pedidos));
-    gestor->pedidosEmEspera = (PEDIDO*)(((char *) gestor) + sizeof(struct gestor_pedidos)
-    + pedidosMax * sizeof(PEDIDO));
+    gestor->pedidosEmExecucao = malloc(sizeof(PEDIDO)*pedidosMax);
+    gestor->pedidosEmEspera = malloc(sizeof(PEDIDO));
 
     gestor->nPedidosMax = pedidosMax;
     gestor->nPedidosEmEspera = 0;
@@ -68,26 +66,21 @@ Tenta inserir um pedido no gestor de pedidos. Apenas insere se for possivel inse
 de cada transformação
 */
 void inserirPedido(GESTOR_PEDIDOS gp, PEDIDO p) {
-    int i, ntransf = gp->ntransformacoes;
-    int usados[ntransf]; //array de ocorrencias das transformaçoes do pedido (a preencher)
+    int i;
+    int usados[7]; //array de ocorrencias das transformaçoes do pedido (a preencher)
     int *maxT = gp->maximo; //array com o maximo de cada transformação
     int *atualT = gp->atual; //array com a atual utilização de cada transformação
 
-    for (i = 0; i<ntransf; i++) {
-        /*
-        Para cada transformação do gestor de pedidos, vamos contar as ocorrencias que cada uma tem no pedido,
-        e ao mesmo tempo verificamos se o pedido pode entrar, tendo em conta os recursos que utiliza.
-        */
-        char* transf = gp->transformacoes[i];
-        int ocorrencias = ocorrenciasTransformacao(p, transf);
+    for (i = 0; i<7; i++) {
+        int ocorrencias = ocorrenciasTransformacao(p, i);
         usados[i] = ocorrencias;
         if (atualT[i] + ocorrencias > maxT[i]) { //nao pode inserir porque um recurso excede
-            printf("[GESTOR_PEDIDOS]: Nao consegue inserir pedido, tem que ir pra fila de espera\n");
+            write(1,"[GESTOR_PEDIDOS]: Nao consegue inserir pedido, tem que ir pra fila de espera\n",78);
             return; //colocar na fila de espera, A FAZER....  break; e depois adicionar a fila de espera com certa ordem
         }
     }
     //A este ponto assume-se que o pedido pode ser realizado diretamente
-    for (i=0; i<ntransf; i++) {
+    for (i=0; i<7; i++) {
         atualT[i] += usados[i]; //adiciona o pedido, muda o array de utilização das transformaçoes
     }
     
@@ -106,5 +99,11 @@ void removerPedido(GESTOR_PEDIDOS gp, int pidPedido) {
     PEDIDO* pedidosEmExecucao = gp->pedidosEmExecucao;
 
     //remover o pedido cujo pid corresponde a pidPedido.
+    //freePedido(p)
+}
 
+void freeGestor(GESTOR_PEDIDOS g){
+    free(g->pedidosEmEspera);
+    free(g->pedidosEmExecucao);
+    free(g);
 }
