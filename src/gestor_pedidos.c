@@ -107,3 +107,19 @@ void freeGestor(GESTOR_PEDIDOS g){
     free(g->pedidosEmExecucao);
     free(g);
 }
+
+int* getMaximo(GESTOR_PEDIDOS gp) {
+    return gp->maximo;
+}
+
+int* getAtual(GESTOR_PEDIDOS gp) {
+    return gp->atual;
+}
+
+int getNPedidosEmExecucao(GESTOR_PEDIDOS gp) {
+    return gp->nPedidosEmExecucao;
+}
+
+PEDIDO* getPedidosEmExecucao(GESTOR_PEDIDOS gp) {
+    return gp->pedidosEmExecucao;
+}

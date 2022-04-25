@@ -9,22 +9,45 @@
 #include <sys/stat.h>
 #include "../libs/servidor.h"
 #include "../libs/funcoes.h"
+#include "../libs/pedido.h"
+#include "../libs/gestor_pedidos.h"
 
 struct server {
-    //Assume-se que há 10 operações no maximo
-    char transformacoes[10][20]; //Assume-se que cada transformação tem 20 caracteres no maximo
-    int maximo[10]; //array com o maximo de ocorrencias de cada transformação
-    int atual[10]; //array com a utilizaçao atual de cada transformação
-    int ntransformacoes;
-    int tamanhoPedidos;
+    //Assume-se que há 7 operações
+    int maximo[7]; //array com o maximo de ocorrencias de cada transformação
+    int atual[7]; //array com a utilizaçao atual de cada transformação
+    int tamanhoPedidosStr;
     char pedidos[];
 };
+
+SERVER createServerFromGestor(GESTOR_PEDIDOS gp) {
+    int i;
+    int ntransf = 7;
+
+    int* maxArray = getMaximo(gp);
+    int* atualArray = getAtual(gp);
+    int nPedidos = getNPedidosEmExecucao(gp);
+    PEDIDO* pedidos = getPedidosEmExecucao(gp);
+
+    int tamanhoPedidosStr;
+    char* pedidosStr = getAllPedidosStr(pedidos, nPedidos, &tamanhoPedidosStr);
+
+    SERVER server = malloc(sizeof(struct server) + sizeof(char) * tamanhoPedidosStr);
+
+    for (i=0; i<ntransf; i++) {
+        server->maximo[i] = maxArray[i];
+        server->atual[i] = atualArray[i];
+    }
+    server->tamanhoPedidosStr = tamanhoPedidosStr;
+    strcpy(server->pedidos, pedidosStr);
+    return server;
+}
 
 /*
 Recebe o path para o ficheiro de configuração e cria o server
 */
 SERVER createServer(char* config_file) {
-    int fd = open(config_file, O_RDONLY, 0666), i=0;
+    int fd = open(config_file, O_RDONLY, 0666);
     char buffer[50];
     SERVER server = malloc(sizeof(struct server));
 
@@ -40,12 +63,10 @@ SERVER createServer(char* config_file) {
         char* transf = strtok(buffer, " "); //strtok pode dar problemas com varios processos?
         int max = atoi(strtok(NULL, " "));
 
-        strcpy(server->transformacoes[i], transf); //copia a operação para a matriz de operações
-        server->maximo[i] = max;
-        server->atual[i] = 0;
-        i++;
+        int transf_code = transf_to_code(transf);
+        server->maximo[transf_code] = max;
+        server->atual[transf_code] = 0;
     }
-    server->ntransformacoes = i;
 
     close(fd);
 
@@ -59,12 +80,11 @@ Printa o estado do server
 */
 void printServerStatus(SERVER server) {
     printf("A printar o Server\n");
-    int i=0, max = server->ntransformacoes;
+    int i=0, max = 7;
     for (;i<max;i++) {
-        char* transf = server->transformacoes[i];
-        int max = server->maximo[i];
+        int maximo = server->maximo[i];
         int atual = server->atual[i];
-        printf("transf %s: %d/%d (running/max)\n",transf, atual, max);
+        printf("transf %s: %d/%d (running/max)\n",code_to_transf(i), atual, maximo);
     }
 }
 

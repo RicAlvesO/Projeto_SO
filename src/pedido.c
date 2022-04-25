@@ -21,12 +21,13 @@ struct pedido{
 
 PEDIDO createEmptyPedido() {
     PEDIDO pedido = malloc(sizeof(struct pedido));
+    //pedido->transformacoes = (int*) pedido + sizeof(struct pedido);
     return pedido;
 }
 
 PEDIDO createPedido(int prio, char* inputPath, char* outputPath, int ntransf, char **transformacoes) {
-    PEDIDO pedido = malloc(sizeof(struct pedido));
-    pedido->transformacoes=malloc(sizeof(int)*ntransf);
+    PEDIDO pedido = malloc(sizeof(struct pedido) + sizeof(int)*ntransf);
+    pedido->transformacoes = (int*) (((char*)pedido) + sizeof(struct pedido)); //coloca o apontador no sitio onde vao ficar as transformacoes
     pedido->prioridade = prio; //prioridade do pedido
     pedido->ntransformacoes = ntransf; //quantidade de transformacoes
     strcpy(pedido->inputPath, inputPath);
@@ -61,10 +62,12 @@ PEDIDO readPedido(int fd) {
     if ((ret = read(fd, pedido1, sizeof(struct pedido))) != sizeof(struct pedido)) {
         return NULL; //nao ha pedidos para ler
     }
+
     //agora o pedido2 tem a informaçao de quantas transformaçoes ha, logo consegue alocar espaço suficiente para elas
     pedido2 = malloc(sizeof(struct pedido) + pedido1->ntransformacoes * sizeof(pedido1->transformacoes[0]));
     *pedido2 = *pedido1;
-    if (read(fd, pedido2->transformacoes, pedido2->ntransformacoes * sizeof(pedido2->transformacoes[0])) != pedido2->ntransformacoes * sizeof(pedido2->transformacoes[0])) {
+    pedido2->transformacoes = (int*) (((char*)pedido2) + sizeof(struct pedido));
+    if ((ret = read(fd, pedido2->transformacoes, pedido2->ntransformacoes * sizeof(pedido2->transformacoes[0]))) != pedido2->ntransformacoes * sizeof(pedido2->transformacoes[0])) {
         write(2, "nao conseguiu ler as transformacoes ", 37);
     }
     return pedido2;
@@ -81,7 +84,10 @@ void printPedido(PEDIDO p) {
     }
 }
 
-char* getPedidoStr(PEDIDO p) {
+/*
+Recebe um pedido e devolve o tamanho do pedido representado em string
+*/
+int getTamanhoPedidoStr(PEDIDO p) {
     int tamanhoStr = 0, i;
     tamanhoStr += strlen("proc-file") + 1; //tamanho do proc-file mais o espaço
     tamanhoStr += 2; //a prioridade e o espaço
@@ -92,10 +98,17 @@ char* getPedidoStr(PEDIDO p) {
         tamanhoStr += strlen(code_to_transf(p->transformacoes[i])); //tamanho do argumento
         tamanhoStr ++; //o tamanho do espaço
     }
+    return tamanhoStr;
+}
+
+char* getPedidoStr(PEDIDO p) {
+
+    int tamanhoStr = getTamanhoPedidoStr(p), i;
+    char* str = malloc(sizeof(char) * tamanhoStr); //aloca uma string com espaço para o pedido todo em forma de string
+    
     char prio[2];
     sprintf(prio, "%d",p->prioridade);
 
-    char* str = malloc(sizeof(char) * tamanhoStr);
     str[0] = '\0';
     strcat(str, "proc-file ");
     strcat(str, prio); strcat(str, " ");
@@ -104,6 +117,31 @@ char* getPedidoStr(PEDIDO p) {
     for(i=0; i<p->ntransformacoes; i++) {
         strcat(str, code_to_transf(p->transformacoes[i]));
         strcat(str, " ");
+    }
+    return str;
+}
+
+/*
+Recebe um array de pedidos, o tamanho do array, e devolve uma string com todos os pedidos dentro.
+Tambem mete no conteudo de tamanhoStr o tamanho da string toda.
+*/
+char* getAllPedidosStr(PEDIDO* pedidos, int N, int* tamanhoStr) {
+    int tamanhoTotal = 0, i;
+    for (i=0; i<N; i++) {
+        PEDIDO pedidoAtual = pedidos[i];
+        tamanhoTotal += getTamanhoPedidoStr(pedidoAtual);
+        tamanhoTotal++; //Somar um ao tamanho por causa do \n 
+    }
+    *tamanhoStr = tamanhoTotal;
+
+    char* str = malloc(sizeof(char) * tamanhoTotal); //aloca uma string com espaço para o pedido todo em forma de string
+    str[0] = '\0';
+    for (i=0; i<N; i++) {
+        PEDIDO pedidoAtual = pedidos[i];
+        char* pedidoAtualStr = getPedidoStr(pedidoAtual);
+        strcat(str, pedidoAtualStr);
+        strcat(str, "\n"); //fazer paragrafo para o proximo pedido estar noutra linha
+        free(pedidoAtualStr);
     }
     return str;
 }
@@ -207,7 +245,7 @@ char *code_to_transf(int cd)
         return "encrypt";
         break;
     case DEC:
-        return "decopryt";
+        return "decrypt";
         break;
     case BDE:
         return "bdecompress";

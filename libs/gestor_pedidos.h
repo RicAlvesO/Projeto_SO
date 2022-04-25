@@ -6,3 +6,7 @@ GESTOR_PEDIDOS createGestorPedidos( char* config_file);
 void inserirPedido(GESTOR_PEDIDOS gp, PEDIDO p);
 void removerPedido(GESTOR_PEDIDOS gp, int pidPedido);
 void freeGestor(GESTOR_PEDIDOS gp);
+int* getMaximo(GESTOR_PEDIDOS gp);
+int* getAtual(GESTOR_PEDIDOS gp);
+int getNPedidosEmExecucao(GESTOR_PEDIDOS gp);
+PEDIDO* getPedidosEmExecucao(GESTOR_PEDIDOS gp);
