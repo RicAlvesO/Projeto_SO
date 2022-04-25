@@ -10,3 +10,4 @@ char* getPedidoStr(PEDIDO p);
 int getNTransformacoes(PEDIDO p);
 int ocorrenciasTransformacao(PEDIDO p, char* transf);
 void executarPedido(PEDIDO p);
+void setPid(PEDIDO p,int pid);

@@ -85,6 +85,7 @@ int main(int argc, char* argv[]) {
             while(1) {
                 while ((pid = waitpid(-1,&status,WNOHANG)) > 0) { //enquanto houverem pedidos terminados
                     printf("Acabou um pedido\n");
+                    removerPedido(gp, pid); //remove do gestor de pedidos o pedido cujo processo acabou
                 }
                 while ((pedido = readPedido(fds[0])) != NULL) { //enquanto houver pedidos
                     printf("Leu um pedido\n");

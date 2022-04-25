@@ -125,12 +125,25 @@ int ocorrenciasTransformacao(PEDIDO p, char* transf) {
 Executa o pedido p no processo atual
 */
 void executarPedido(PEDIDO p) {
+    int pid;
     
-    if (fork() == 0) {
+    if ((pid = fork()) == 0) {
+        /*
+        Codigo do processo filho, que vai executar o pedido
+        */
         printf("[PEDIDO]: Vou dormir\n");
         sleep(3);
         printf("[PEDIDO]: Dormi\n");
         _exit(0);
+    } else {
+        /*
+        Codigo do processo pai, que vai atribuir ao pedido o pid do processo que o vai executar.
+        */
+        setPid(p,pid);
     }
 
+}
+
+void setPid(PEDIDO p,int pid) {
+    p->pid = pid;
 }
