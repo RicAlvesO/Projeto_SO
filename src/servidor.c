@@ -106,14 +106,15 @@ SERVER readServer(int fd) {
     //}
 
     SERVER server1 = malloc(sizeof(struct server));
-    if (read(fd, server1, sizeof(struct server)) != sizeof(struct server)) {
-        write(2, "nao conseguiu ler do fifo: ", 28);
+    int ret;
+    if ((ret = read(fd, server1, sizeof(struct server))) != sizeof(struct server)) {
+        write(2, "nao conseguiu ler o server do fifo: ", 36);
     }
     SERVER server2 = malloc(sizeof(struct server) + server1->tamanhoPedidosStr);
     *server2 = *server1;
     free(server1);
     if (read(fd, server2->pedidos, server2->tamanhoPedidosStr) != server2->tamanhoPedidosStr) {
-        write(2, "nao conseguiu ler do fifo: ", 28);
+        write(2, "nao conseguiu ler pedidos do fifo: ", 35);
     }
 
     //é da responsabilidade do utilizador fechar o fd
@@ -136,7 +137,7 @@ void writeServer(SERVER server, int fd) {
     //}
 
     if (write(fd, server, sizeof(struct server) + server->tamanhoPedidosStr) != (sizeof(struct server) + server->tamanhoPedidosStr)) {
-        write(2, "nao conseguiu escrever no fifo: ", 33);
+        write(2, "nao conseguiu escrever o servidor no fifo\n", 42);
     }
 
     //cabe ao utilizador dar free a este server, e fechar o fd.

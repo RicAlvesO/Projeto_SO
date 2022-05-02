@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 
 #define MAX_TRANSFORMATION_SIZE 20
 
@@ -16,6 +18,8 @@ struct pedido{
     int prioridade;
     char inputPath[128];
     char outputPath[128];
+    char clienteFifoStr[128]; //string que contem o caminho para o fifo de escrita de onde o cliente vai ler
+    int fdCliente; //file descriptor do cliente
     int ntransformacoes; //numero de transformacoes
     int *transformacoes; //nao sabemos quantas transformações existem, mas cada uma tem 20 chars de tamanho no maximo
 };
@@ -43,7 +47,9 @@ void writePedido(PEDIDO pedido, int fd) {
     //if (write(fd, pedido, sizeof(struct pedido)) != sizeof(struct pedido)) {
     //    write(2, "nao conseguiu escrever no fifo: ", 33);
     //}
-    write(fd, pedido, sizeof(*pedido) + pedido->ntransformacoes * sizeof(pedido->transformacoes[0]));
+    if (write(fd, pedido, sizeof(*pedido) + pedido->ntransformacoes * sizeof(pedido->transformacoes[0])) != (sizeof(*pedido) + pedido->ntransformacoes * sizeof(pedido->transformacoes[0]))) {
+        write(2, "nao conseguiu escrever pedido\n", 31);
+    }
 }
 
 //le um pedido do file descriptor fd e mete na struct pedido. Devolve o numero de bytes lidos
@@ -180,11 +186,9 @@ void executarPedido(PEDIDO p) {
         printf("[PEDIDO]: Vou dormir\n");
         sleep(3);
         printf("[PEDIDO]: Dormi\n");
+        alertPedidoConcluido(p);
         _exit(0);
     } else {
-        /*
-        Codigo do processo pai, que vai atribuir ao pedido o pid do processo que o vai executar.
-        */
         setPid(p,pid);
     }
 
@@ -270,4 +274,41 @@ char *code_to_transf(int cd)
 void free_pedido(PEDIDO p){
     free(p->transformacoes);
     free(p);
+}
+
+void setClienteFifoStr(PEDIDO p, char* fifoPath) {
+    strcpy(p->clienteFifoStr, fifoPath);
+}
+
+void openClienteFd(PEDIDO p) {
+    p->fdCliente = open(p->clienteFifoStr, O_WRONLY);
+    //Assumindo que o pedido ja tem escrito o caminho para o fifo do cliente,
+    //abre o fifo em modo escrita para mandar as informaçoes necessarias privadamente para o cliente.
+}
+
+void alertPedidoEmEspera(PEDIDO p) {
+    //assume que o file descriptor do cliente esta aberto
+    write(p->fdCliente, "pending\n",8);
+}
+
+void alertPedidoInserido(PEDIDO p) {
+    //assume que o file descriptor do cliente esta aberto
+    write(p->fdCliente, "processing\n", 11);
+}
+
+void alertPedidoConcluido(PEDIDO p) {
+    //assume que o file descriptor do cliente esta aberto
+    write(p->fdCliente, "concluding\n", 11);
+    write(p->fdCliente, "end\n", 4);
+}
+
+PEDIDO encontrarPedido(PEDIDO* pedidos, int N, int pid) {
+    int i;
+    for (i=0; i<N; i++) {
+        PEDIDO p = pedidos[i];
+        if (p->pid == pid) {
+            return p;
+        }
+    }
+    return NULL; //nenhum pedido na lista estava a ser realizado pelo processo de id 'pid', logo retorna NULL
 }

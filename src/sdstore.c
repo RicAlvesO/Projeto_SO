@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include "../libs/servidor.h"
 #include "../libs/pedido.h"
+#include "../libs/funcoes.h"
 
 // Function that handles client requests
 int requests(int argc, char* argv[]){
@@ -49,8 +50,20 @@ int requests(int argc, char* argv[]){
 }
 
 int main(int argc, char* argv[]) {
-    int fd, x, i=0;
-    char* myfifo = "myfifo";
+    int fdProdutor, fdConsumidor, x, i=0;
+    char myfifo[128], fifoProdutor[128], fifoConsumidor[128];
+    myfifo[0] = '\0';
+    char* fifo_geral = "fifos/fifo_geral";
+    char pidStr[20];
+    int pid = getpid();
+    sprintf(pidStr,"%d", pid);
+    strcat(myfifo, "fifos/fifo");
+    strcat(myfifo, pidStr);
+    strcpy(fifoProdutor, myfifo);
+    strcpy(fifoConsumidor, myfifo);
+    strcat(fifoProdutor, "-cliente_produtor");
+    strcat(fifoConsumidor, "-cliente_consumidor");
+    //return 0;
 
     if (argc==1) {
     
@@ -63,23 +76,65 @@ int main(int argc, char* argv[]) {
     }else if (argc==2 && strcmp(argv[1],"status") == 0) {
         
         // Get server status, show the current tasks and transfs
-        mkfifo(myfifo,0666);
-        fd = open(myfifo, O_WRONLY);
+        if (mkfifo(fifo_geral,0666) == -1) {
+            write(1,"[CLIENTE]: fifo_geral ja criado\n", 33);
+        }
+        if (mkfifo(fifoConsumidor,0666) == -1) {
+            write(1,"[CLIENTE]: fifo consumidor ja criado\n", 38);
+        }
+        if (mkfifo(fifoProdutor,0666) == -1) {
+            write(1,"[CLIENTE]: fifo produtor ja criado\n", 36);
+        }
+
+        /*
+        Depois de ter aberto o fifo geral, manda para la a string contendo o nome do fifo privado deste cliente,
+        para que a informacao entre o servidor e este cliente nao seja "roubada" por outros clientes.
+        */
+        if ((fdProdutor = open(fifo_geral, O_WRONLY)) == -1) {
+            write(1,"[CLIENTE]: nao conseguiu abrir fifo_geral\n",43);
+        } else {
+            printf("abriu fifogeral\n");
+        }
+        write (fdProdutor, myfifo, sizeof(myfifo)); //maximo 128 caracteres
+        close(fdProdutor);
+        fdProdutor = open(fifoProdutor, O_WRONLY);
+        fdConsumidor = open(fifoConsumidor, O_RDONLY);
         x=0;
-        write(fd,&x,sizeof(int));
-        close(fd);
+        write(fdProdutor,&x,sizeof(int)); //avisa o servidor que precisa do estado do servidor
+        close(fdProdutor);
         //do outro lado do fifo, o servidor está a ouvir um inteiro
         //ao receber o numero 0, ele associa o numero 0 ao mostrar o status do servidor
 
-        fd = open(myfifo, O_RDONLY);
-        SERVER server = readServer(fd);
+        SERVER server = readServer(fdConsumidor);
         printServerStatus(server); //queremos que o server dê print no terminal do cliente
-        close(fd);
+        close(fdConsumidor);
         return 1;
 
     } else if (argc > 2 && strcmp(argv[1],"proc-file") == 0) {
         //Apply transformations
-        printf("[CLIENTE]: entrou\n");
+
+        if (mkfifo(fifo_geral,0666) == -1) {
+            write(1,"[CLIENTE]: fifo_geral ja criado\n", 33);
+        }
+        if (mkfifo(fifoConsumidor,0666) == -1) {
+            write(1,"[CLIENTE]: fifo consumidor ja criado\n", 38);
+        }
+        if (mkfifo(fifoProdutor,0666) == -1) {
+            write(1,"[CLIENTE]: fifo produtor ja criado\n", 36);
+        }
+
+        /*
+        Depois de ter aberto o fifo geral, manda para la a string contendo o nome do fifo privado deste cliente,
+        para que a informacao entre o servidor e este cliente nao seja "roubada" por outros clientes.
+        */
+        if ((fdProdutor = open(fifo_geral, O_WRONLY)) == -1) {
+            write(1,"[CLIENTE]: nao conseguiu abrir fifo_geral\n",43);
+        }
+
+        write (fdProdutor, myfifo, sizeof(myfifo)); //maximo 128 caracteres
+        close(fdProdutor);
+        fdProdutor = open(fifoProdutor, O_WRONLY);
+        fdConsumidor = open(fifoConsumidor, O_RDONLY);
 
         int priority = atoi(argv[2]);
         char* inputPath = argv[3];
@@ -89,19 +144,29 @@ int main(int argc, char* argv[]) {
         for (int i=0; i<ntransf; i++) {
             transformacoes[i] = argv[i + 5];
         }
-        printf("[CLIENTE]: A criar pedido\n");
         PEDIDO pedido = createPedido(priority, inputPath, outputPath, ntransf, transformacoes); i++;
-        printf("[CLIENTE]: Criou pedido\n");
 
-        mkfifo(myfifo,0666);
-        printf("[CLIENTE]: abriu fifo\n");
-        fd = open(myfifo, O_WRONLY);
+        //fdProdutor = open(fifo_geral, O_WRONLY);
         x=1;
-        write(fd,&x,sizeof(int)); //escreve um 1 para o servidor, indicando que vem ai um pedido
-        writePedido(pedido,fd); //escreve o pedido, estando o servidor pronto a recebe-lo.
-        printf("[CLIENTE]: escreveu pedido\n");
-        close(fd);
-        printf("[CLIENTE]: fechou fifo\n");
+        write(fdProdutor,&x,sizeof(int)); //escreve um 1 para o servidor, indicando que vem ai um pedido
+        writePedido(pedido,fdProdutor); //escreve o pedido, estando o servidor pronto a recebe-lo.
+        close(fdProdutor);
+
+        char buffer[128];
+        while (readln(fdConsumidor, buffer, 128) > 0) {
+            /*
+            Enquanto o servidor nao fecha o fifo, o cliente recebe mensagens do tipo 'pending', 'processing', etc,
+            e da print para o ecra do cliente.
+            Se recebe a mensagem end, é suposto parar de ler input
+            */
+            if (strcmp(buffer, "end\n") == 0) {
+                close(fdConsumidor);
+                close(fdProdutor);
+                return 2;
+            }
+            write(1,buffer,strlen(buffer));
+            fflush(stdout);
+        }
 
         return 2;
 

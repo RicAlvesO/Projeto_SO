@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdio.h>
 
 // Reads char from certain file descriptor
 int readChar(int fd, char* c) {
@@ -21,5 +22,6 @@ ssize_t readln(int fd, char* line, size_t size) {
         line[i] = c;
         i++;
     }
+    if (i!=size) line[i] = '\0';
     return i; //tamanho da linha, incluindo o \n
 }

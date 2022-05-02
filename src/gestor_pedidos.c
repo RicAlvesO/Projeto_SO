@@ -66,16 +66,17 @@ Tenta inserir um pedido no gestor de pedidos. Apenas insere se for possivel inse
 de cada transformação
 */
 void inserirPedido(GESTOR_PEDIDOS gp, PEDIDO p) {
+
     int i;
     int usados[7]; //array de ocorrencias das transformaçoes do pedido (a preencher)
     int *maxT = gp->maximo; //array com o maximo de cada transformação
-    int *atualT = gp->atual; //array com a atual utilização de cada transformação
-
+    int *atualT = gp->atual; //array com a atual utilização de cada transformaçã
     for (i = 0; i<7; i++) {
         int ocorrencias = ocorrenciasTransformacao(p, i);
         usados[i] = ocorrencias;
         if (atualT[i] + ocorrencias > maxT[i]) { //nao pode inserir porque um recurso excede
             write(1,"[GESTOR_PEDIDOS]: Nao consegue inserir pedido, tem que ir pra fila de espera\n",78);
+            alertPedidoEmEspera(p);
             return; //colocar na fila de espera, A FAZER....  break; e depois adicionar a fila de espera com certa ordem
         }
     }
@@ -83,9 +84,11 @@ void inserirPedido(GESTOR_PEDIDOS gp, PEDIDO p) {
     for (i=0; i<7; i++) {
         atualT[i] += usados[i]; //adiciona o pedido, muda o array de utilização das transformaçoes
     }
-    
     gp->pedidosEmExecucao[gp->nPedidosEmExecucao++] = p; //Esta parte pode ser mudada. É suposto adicionar o pedido ao gestor.
+    alertPedidoInserido(p);
     executarPedido(p);
+    
+    
 
 }
 
@@ -97,6 +100,10 @@ e elimina-o do gestor.
 void removerPedido(GESTOR_PEDIDOS gp, int pidPedido) {
     int n = gp->nPedidosEmExecucao;
     PEDIDO* pedidosEmExecucao = gp->pedidosEmExecucao;
+    PEDIDO p;
+    if ((p = encontrarPedido(pedidosEmExecucao, n, pidPedido)) != NULL) {
+        //encontrou o pedido que acabou
+    }
 
     //remover o pedido cujo pid corresponde a pidPedido.
     //freePedido(p)
