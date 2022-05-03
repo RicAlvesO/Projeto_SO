@@ -67,7 +67,11 @@ int main(int argc, char* argv[]) {
     pipe(pedidos);
     pipe(serverProdutorGestorConsumidor);
     pipe(serverConsumidorGestorProdutor);
-
+    
+    if (mkfifo(fifo_geral,0666) == -1) {
+        write(1,"[SERVIDOR]: fifo ja criado\n", 28);
+    }
+    
     switch(fork()) {
         case -1:
             printf("erro\n");
@@ -77,6 +81,7 @@ int main(int argc, char* argv[]) {
             close(pedidos[1]);
             close(serverProdutorGestorConsumidor[1]);
             close(serverConsumidorGestorProdutor[0]);
+            int fifoauxleitura = open(fifo_geral, O_WRONLY);
             int pid, status, x;
             PEDIDO pedido;
             GESTOR_PEDIDOS gp = createGestorPedidos(argv[1]);
@@ -121,23 +126,25 @@ int main(int argc, char* argv[]) {
             close(serverConsumidorGestorProdutor[1]);
 
             char buffer[128]; //path para o fifo
-            if (mkfifo(fifo_geral,0666) == -1) {
-                write(1,"[SERVIDOR]: fifo ja criado\n", 28);
-            }
+            //if (mkfifo(fifo_geral,0666) == -1) {
+            //    write(1,"[SERVIDOR]: fifo ja criado\n", 28);
+            //}
             /*
             Nesta seccao é aberto um descritor de escrita permanente auxiliar para o fifo_geral, de maneira a que este
             nao seja fechado quando um cliente acaba e fecha o seu descritor do fifo_geral.
-            */
+            
             if (fork() == 0) {
-                int fifoauxleitura = open(fifo_geral, O_RDONLY);
+                printf("AQUI1\n");
                 _exit(0);
             }
-            int fifoaux = open(fifo_geral, O_WRONLY); //este fifo so serve para o read nao ler EOF.
+            */    
+            //int fifoaux = open(fifo_geral, O_RDONLY); //este fifo so serve para o read nao ler EOF.
             //Nao se usara o fifoaux.
             
             int fifo = open(fifo_geral, O_RDONLY); //o servidor so precisa de ler linhas do fifo geral.
-            wait(NULL);
+            
             while (read(fifo, buffer, 128) > 0) { //le os paths dos fifos privados de cada cliente
+                
                 char fifoEscrita[128];
                 char fifoLeitura[128];
                 strcpy(fifoLeitura, buffer);
@@ -258,6 +265,6 @@ int main(int argc, char* argv[]) {
     }
     --------------------------------------------------------------------
     */
-
+    
     return 1;
 }
