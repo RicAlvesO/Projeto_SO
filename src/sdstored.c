@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
             int fifoauxleitura = open(fifo_geral, O_WRONLY);
             int pid, status, x;
             PEDIDO pedido;
-            GESTOR_PEDIDOS gp = createGestorPedidos(argv[1]);
+            GESTOR_PEDIDOS gp = createGestorPedidos(argv[1], argv[2]);
             //codigo filho,  gere os pedidos, recebe pedidos novos do pai
             int retval1 = fcntl(pedidos[0], F_SETFL, fcntl(pedidos[0], F_GETFL) | O_NONBLOCK);
             int retval2 = fcntl(serverProdutorGestorConsumidor[0], F_SETFL, fcntl(serverProdutorGestorConsumidor[0], F_GETFL) | O_NONBLOCK);

@@ -176,23 +176,23 @@ int ocorrenciasTransformacao(PEDIDO p, int transf) {
  * Para executar o pedido atraves do codigo da transformacao
  * usar code_to_transf que retorna string da transformacao
  */
-void executarPedido(PEDIDO p) {
-    int pid;
-    
-    if ((pid = fork()) == 0) {
-        /*
-        Codigo do processo filho, que vai executar o pedido
-        */
-        printf("[PEDIDO]: Vou dormir\n");
-        sleep(3);
-        printf("[PEDIDO]: Dormi\n");
-        alertPedidoConcluido(p);
-        _exit(0);
-    } else {
-        setPid(p,pid);
-    }
-
-}
+//void executarPedido(PEDIDO p) {
+//    int pid;
+//    
+//    if ((pid = fork()) == 0) {
+//        /*
+//        Codigo do processo filho, que vai executar o pedido
+//        */
+//        printf("[PEDIDO]: Vou dormir\n");
+//        sleep(3);
+//        printf("[PEDIDO]: Dormi\n");
+//        alertPedidoConcluido(p);
+//        _exit(0);
+//    } else {
+//        setPid(p,pid);
+//    }
+//
+//}
 
 void setPid(PEDIDO p,int pid) {
     p->pid = pid;
@@ -311,4 +311,142 @@ PEDIDO encontrarPedido(PEDIDO* pedidos, int N, int pid) {
         }
     }
     return NULL; //nenhum pedido na lista estava a ser realizado pelo processo de id 'pid', logo retorna NULL
+}
+
+int executaTransformacao(char* path, int transformacao) {
+    //assume-se que a transformacao é so uma palavra
+    char executavel[128];
+    char* exec_args[2];
+    int exec_ret = 0;
+    executavel[0] = '\0';
+    strcat(executavel, path); //assume-se que o path acaba em /
+    strcat(executavel, code_to_transf(transformacao)); //converte a transformacao em string e concateneia-la
+    exec_args[0] = executavel;
+    exec_args[1] = NULL;
+
+    exec_ret = execvp(exec_args[0], exec_args);
+
+    return exec_ret;
+}
+
+void executarPedido(PEDIDO p, char* folder_path) {
+
+    int pid;
+
+    if ((pid = fork()) == 0) {
+        int ntransf = p->ntransformacoes;
+        int* transf = p->transformacoes;
+        int inputFd;
+        int outputFd;
+        if ((inputFd = open(p->inputPath, O_RDONLY, 0666)) == -1) {
+            write(2, "Erro a abrir ficheiro input\n",29);
+        }
+        if ((outputFd = open(p->outputPath, O_WRONLY | O_CREAT, 0666)) == -1) {
+            write(2, "Erro a abrir ficheiro output\n", 30);
+        }
+        int pipes[ntransf-1][2];
+        int status[ntransf];
+        int i;
+
+        // criar os pipes conforme o número de comandos
+        for (i = 0; i < ntransf-1; i++) {
+            if (pipe(pipes[i]) == -1) {
+                perror("Pipe não foi criado");
+                return;
+            }
+        }
+
+        for (i = 0; i < ntransf; i++) {
+
+            if (i == 0) {
+                switch(fork()) {
+                    case -1:
+                        perror("Fork não foi efetuado");
+                        return;
+                    case 0:
+                        // codigo do filho 0
+
+                        close(pipes[i][0]);
+
+                        dup2(pipes[i][1],1);
+                        close(pipes[i][1]);
+
+                        dup2(inputFd,0);
+                        close(inputFd);
+
+                        executaTransformacao(folder_path,transf[i]);
+
+                        _exit(0);
+
+                    default:
+                        close(pipes[i][1]);
+                }
+            }
+            else if (i == ntransf-1) {
+                switch(fork()) {
+                    case -1:
+                        perror("Fork não foi efetuado");
+                        return;
+                    case 0:
+                        // codigo do filho n-1
+
+                        //if(close(p[i-1][1]) != 0) perror("close");
+
+                        dup2(pipes[i-1][0],0);
+                        close(pipes[i-1][0]);
+
+                        dup2(outputFd,1);
+                        close(outputFd);
+
+                        executaTransformacao(folder_path,transf[i]);
+
+                        _exit(0);
+
+                    default:
+                        close(pipes[i-1][0]);
+                }
+            }
+            else {
+                switch(fork()) {
+                    case -1:
+                        perror("Fork não foi efetuado");
+                        return;
+                    case 0:
+                        // codigo do filho i
+
+                        //if(close(p[i-1][1]) != 0){perror("close");}
+                        close(pipes[i][0]);
+
+                        dup2(pipes[i][1],1);
+                        close(pipes[i][1]);
+
+                        dup2(pipes[i-1][0],0);
+                        close(pipes[i-1][0]);
+
+                        executaTransformacao(folder_path,transf[i]);
+
+                        _exit(0);
+
+                    default:
+                        close(pipes[i-1][0]);
+                        close(pipes[i][1]);
+                }
+            }
+
+        }
+
+        for (i = 0; i < ntransf; i++) {
+            wait(&status[i]);
+
+            if (WIFEXITED(status[i])) {
+                printf("[PAI]: filho terminou com %d\n", WEXITSTATUS(status[i]));
+            }
+        }
+        printf("cp0\n");
+        alertPedidoConcluido(p);
+        _exit(0);
+    } else {
+        //enquanto o filho executa o pedido, o pai continua a execuçao, atribuindo o pid do processo ao pedido que ele executa.
+        setPid(p,pid);
+    }
 }

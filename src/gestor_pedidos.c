@@ -12,6 +12,8 @@ struct gestor_pedidos {
     
     int maximo[7]; //array com o maximo de ocorrencias de cada transformação
     int atual[7]; //array com a utilizaçao atual de cada transformação
+
+    char transformation_folder[128];
     
     int nPedidosMax; //numero de pedidos maximo
     int nPedidosEmExecucao; //numero de pedidos em execucao
@@ -23,7 +25,7 @@ struct gestor_pedidos {
 /*
 Cria o gestor de pedidos
 */
-GESTOR_PEDIDOS createGestorPedidos( char* config_file) {
+GESTOR_PEDIDOS createGestorPedidos( char* config_file, char* transf_folder) {
     //Cria o gestor estando os dois arrays vazios, mas com espaço para o numero de pedidos maximo
     GESTOR_PEDIDOS gestor = (GESTOR_PEDIDOS) malloc(sizeof(struct gestor_pedidos)); 
     int fd = open(config_file, O_RDONLY, 0666),i=0;
@@ -54,6 +56,8 @@ GESTOR_PEDIDOS createGestorPedidos( char* config_file) {
 
     gestor->pedidosEmExecucao = malloc(sizeof(PEDIDO)*pedidosMax);
     gestor->pedidosEmEspera = malloc(sizeof(PEDIDO));
+
+    strcpy(gestor->transformation_folder,transf_folder);
 
     gestor->nPedidosMax = pedidosMax;
     gestor->nPedidosEmEspera = 0;
@@ -86,10 +90,7 @@ void inserirPedido(GESTOR_PEDIDOS gp, PEDIDO p) {
     }
     gp->pedidosEmExecucao[gp->nPedidosEmExecucao++] = p; //Esta parte pode ser mudada. É suposto adicionar o pedido ao gestor.
     alertPedidoInserido(p);
-    executarPedido(p);
-    
-    
-
+    executarPedido(p, gp->transformation_folder);
 }
 
 /*
