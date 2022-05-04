@@ -65,14 +65,14 @@ void writePedido(PEDIDO pedido, int fd) {
 PEDIDO readPedido(int fd) {
     int ret;
     PEDIDO pedido1 = createEmptyPedido();
-    PEDIDO pedido2;
     if ((ret = read(fd, pedido1, sizeof(struct pedido))) != sizeof(struct pedido)) {
+        free_pedido(pedido1);
         return NULL; //nao ha pedidos para ler
     }
-
     //agora o pedido2 tem a informaçao de quantas transformaçoes ha, logo consegue alocar espaço suficiente para elas
-    pedido2 = malloc(sizeof(struct pedido) + pedido1->ntransformacoes * sizeof(pedido1->transformacoes[0]));
+    PEDIDO pedido2 = malloc(sizeof(struct pedido) + pedido1->ntransformacoes * sizeof(pedido1->transformacoes[0]));
     *pedido2 = *pedido1;
+    free_pedido(pedido1);
     pedido2->transformacoes = (int*) (((char*)pedido2) + sizeof(struct pedido));
     if ((ret = read(fd, pedido2->transformacoes, pedido2->ntransformacoes * sizeof(pedido2->transformacoes[0]))) != pedido2->ntransformacoes * sizeof(pedido2->transformacoes[0])) {
         write(2, "nao conseguiu ler as transformacoes ", 37);
@@ -151,7 +151,7 @@ char* getAllPedidosStr(PEDIDO* pedidos, int N, int* tamanhoStr) {
         char* pedidoAtualStr = getPedidoStr(pedidoAtual);
         strcat(str, pedidoAtualStr);
         strcat(str, "\n"); //fazer paragrafo para o proximo pedido estar noutra linha
-        free(pedidoAtualStr);
+        //free(pedidoAtualStr); //este free estava a dar o erro 'free(): invalid pointer'
     }
     return str;
 }
@@ -272,7 +272,7 @@ char *code_to_transf(int cd)
 }
 
 void free_pedido(PEDIDO p){
-    free(p->transformacoes);
+    //apenas da-se free ao pointer para o pedido, dado que a alocaçao do array transformacoes esta contida na alocaçao do pedido
     free(p);
 }
 
@@ -319,7 +319,7 @@ int executaTransformacao(char* path, int transformacao) {
     char* exec_args[2];
     int exec_ret = 0;
     executavel[0] = '\0';
-    strcat(executavel, path); //assume-se que o path acaba em /
+    strncat(executavel, path, 128); //assume-se que o path acaba em /
     strcat(executavel, code_to_transf(transformacao)); //converte a transformacao em string e concateneia-la
     exec_args[0] = executavel;
     exec_args[1] = NULL;

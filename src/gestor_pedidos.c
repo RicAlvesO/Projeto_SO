@@ -57,7 +57,9 @@ GESTOR_PEDIDOS createGestorPedidos( char* config_file, char* transf_folder) {
     gestor->pedidosEmExecucao = malloc(sizeof(PEDIDO)*pedidosMax);
     gestor->pedidosEmEspera = malloc(sizeof(PEDIDO));
 
-    strcpy(gestor->transformation_folder,transf_folder);
+    //strncpy evita escrever em regiao de memoria nao alocada
+    strncpy(gestor->transformation_folder,transf_folder, sizeof(gestor->transformation_folder));
+    printf("str - %s\n", gestor->transformation_folder);
 
     gestor->nPedidosMax = pedidosMax;
     gestor->nPedidosEmEspera = 0;
@@ -88,7 +90,7 @@ void inserirPedido(GESTOR_PEDIDOS gp, PEDIDO p) {
     for (i=0; i<7; i++) {
         atualT[i] += usados[i]; //adiciona o pedido, muda o array de utilização das transformaçoes
     }
-    gp->pedidosEmExecucao[gp->nPedidosEmExecucao++] = p; //Esta parte pode ser mudada. É suposto adicionar o pedido ao gestor.
+    gp->pedidosEmExecucao[gp->nPedidosEmExecucao++] = p;
     alertPedidoInserido(p);
     executarPedido(p, gp->transformation_folder);
 }
@@ -111,9 +113,9 @@ void removerPedido(GESTOR_PEDIDOS gp, int pidPedido) {
 }
 
 void freeGestor(GESTOR_PEDIDOS g){
-    free(g->pedidosEmEspera);
-    free(g->pedidosEmExecucao);
     free(g);
+    //dar free ao pointer para o gestor ja da free aos arrays pedidosEmExecucao e pedidosEmEspera,
+    //dado que a alocação destes arrays foi tada feita ao mesmo tempo que se alocou o gestor de pedidos.
 }
 
 int* getMaximo(GESTOR_PEDIDOS gp) {

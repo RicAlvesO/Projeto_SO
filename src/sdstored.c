@@ -103,8 +103,6 @@ int main(int argc, char* argv[]) {
                     printf("Leu um pedido\n");
                     setPedidoNth(pedido, i); i++;
                     openClienteFd(pedido);
-                    char* str = getPedidoStr(pedido);
-                    printf("pedido - %s\n", str);
                     inserirPedido(gp, pedido);
                     //printPedido(pedido);
                 }
@@ -112,7 +110,7 @@ int main(int argc, char* argv[]) {
                     //Se não houver nada para ler no pipe, este devolve -1 e continua execuçao, dado que o read neste pipe é nao bloqueador
                     SERVER serverAtual = createServerFromGestor(gp); //cria o estado atual do servidor
                     writeServer(serverAtual, serverConsumidorGestorProdutor[1]);
-                    //freeServer(&serverAtual);
+                    freeServer(&serverAtual);
                 }
 
                 usleep(50000); //espera 50 milissegundos
@@ -160,10 +158,12 @@ int main(int argc, char* argv[]) {
                     write(serverProdutorGestorConsumidor[1], &x, sizeof(int)); //manda qualquer coisa para o gestor para ele saber que o processo pai precisa do estado do servidor
                     SERVER server = readServer(serverConsumidorGestorProdutor[0]); //le o servidor no estado atual do pipe para onde o gestor escreveu
                     writeServer(server, fdEscrita);
+                    freeServer(&server);
                 } else if (x==1) { // -> cliente vai enviar pedido
                     PEDIDO pedido = readPedido(fdLeitura);
                     setClienteFifoStr(pedido, fifoEscrita);
                     writePedido(pedido,pedidos[1]);
+                    free_pedido(pedido);
                 }
                 //close(fdLeitura);
                 //close(fdEscrita);
