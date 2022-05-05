@@ -26,13 +26,13 @@ SERVER createServerFromGestor(GESTOR_PEDIDOS gp) {
 
     int* maxArray = getMaximo(gp);
     int* atualArray = getAtual(gp);
-    int nPedidos = getNPedidosEmExecucao(gp);
-    PEDIDO* pedidos = getPedidosEmExecucao(gp);
 
     int tamanhoPedidosStr;
-    char* pedidosStr = getAllPedidosStr(pedidos, nPedidos, &tamanhoPedidosStr);
+    char* pedidosStr = getAllPedidosStr(gp, &tamanhoPedidosStr);
 
     SERVER server = malloc(sizeof(struct server) + sizeof(char) * tamanhoPedidosStr);
+
+    createAtualArray(gp);
 
     for (i=0; i<ntransf; i++) {
         server->maximo[i] = maxArray[i];

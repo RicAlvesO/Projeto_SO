@@ -135,29 +135,37 @@ char* getPedidoStr(PEDIDO p) {
 Recebe um array de pedidos, o tamanho do array, e devolve uma string com todos os pedidos dentro.
 Tambem mete no conteudo de tamanhoStr o tamanho da string toda.
 */
-char* getAllPedidosStr(PEDIDO* pedidos, int N, int* tamanhoStr) {
-    int tamanhoTotal = 0, i;
-    for (i=0; i<N; i++) {
-        PEDIDO pedidoAtual = pedidos[i];
-        tamanhoTotal += getTamanhoPedidoStr(pedidoAtual);
-        tamanhoTotal++; //Somar um ao tamanho por causa do \n 
-    }
-    *tamanhoStr = tamanhoTotal;
-
-    char* str = malloc(sizeof(char) * tamanhoTotal); //aloca uma string com espaço para o pedido todo em forma de string
-    str[0] = '\0';
-    for (i=0; i<N; i++) {
-        PEDIDO pedidoAtual = pedidos[i];
-        char* pedidoAtualStr = getPedidoStr(pedidoAtual);
-        strcat(str, pedidoAtualStr);
-        strcat(str, "\n"); //fazer paragrafo para o proximo pedido estar noutra linha
-        //free(pedidoAtualStr); //este free estava a dar o erro 'free(): invalid pointer'
-    }
-    return str;
-}
+//char* getAllPedidosStr(PEDIDO* pedidos, int N, int* tamanhoStr) {
+//    int tamanhoTotal = 0, i;
+//    for (i=0; i<N; i++) {
+//        PEDIDO pedidoAtual = pedidos[i];
+//        tamanhoTotal += getTamanhoPedidoStr(pedidoAtual);
+//        tamanhoTotal++; //Somar um ao tamanho por causa do \n 
+//    }
+//    *tamanhoStr = tamanhoTotal;
+//
+//    char* str = malloc(sizeof(char) * tamanhoTotal); //aloca uma string com espaço para o pedido todo em forma de string
+//    str[0] = '\0';
+//    for (i=0; i<N; i++) {
+//        PEDIDO pedidoAtual = pedidos[i];
+//        char* pedidoAtualStr = getPedidoStr(pedidoAtual);
+//        strcat(str, pedidoAtualStr);
+//        strcat(str, "\n"); //fazer paragrafo para o proximo pedido estar noutra linha
+//        //free(pedidoAtualStr); //este free estava a dar o erro 'free(): invalid pointer'
+//    }
+//    return str;
+//}
 
 int getNTransformacoes(PEDIDO p) {
     return p->ntransformacoes;
+}
+
+int getPrioridade(PEDIDO p) {
+    return p->prioridade;
+}
+
+int getPidPedido(PEDIDO p) {
+    return p->pid;
 }
 
 //retorna o numero de ocorrencias de uma certa transformação num pedido
@@ -313,6 +321,20 @@ PEDIDO encontrarPedido(PEDIDO* pedidos, int N, int pid) {
     return NULL; //nenhum pedido na lista estava a ser realizado pelo processo de id 'pid', logo retorna NULL
 }
 
+/*
+Recebe um array de transformacoes atuais, e um pedido, e incrementa no array as transformacoes que o pedido usa.
+Para cada transformacao, incrementa o indice da mesma no array.
+*/
+void addOcorrenciasTransformacoes(int* atualArray, PEDIDO p) {
+    int ntransf = p->ntransformacoes, i;
+    int* transfs = p->transformacoes;
+
+    for (i = 0; i < ntransf; i++) {
+        int transformacaoAtual = transfs[i];
+        atualArray[transformacaoAtual]++;
+    }
+}
+
 int executaTransformacao(char* path, int transformacao) {
     //assume-se que a transformacao é so uma palavra
     char executavel[128];
@@ -439,10 +461,10 @@ void executarPedido(PEDIDO p, char* folder_path) {
             wait(&status[i]);
 
             if (WIFEXITED(status[i])) {
-                printf("[PAI]: filho terminou com %d\n", WEXITSTATUS(status[i]));
+                //printf("[PAI]: filho terminou com %d\n", WEXITSTATUS(status[i]));
             }
         }
-        printf("cp0\n");
+        //sleep(3);
         alertPedidoConcluido(p);
         _exit(0);
     } else {
