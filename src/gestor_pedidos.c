@@ -18,58 +18,7 @@ struct gestor_pedidos {
 
     NODO pedidosExecucao;
     NODO pedidosEspera;
-    
-    //int nPedidosMax; //numero de pedidos maximo
-    //int nPedidosEmExecucao; //numero de pedidos em execucao
-    //int nPedidosEmEspera; //numero de pedidos em espera
-    //PEDIDO *pedidosEmExecucao;
-    //PEDIDO *pedidosEmEspera;
 };
-
-/*
-Cria o gestor de pedidos
-*/
-//GESTOR_PEDIDOS createGestorPedidos( char* config_file, char* transf_folder) {
-//    //Cria o gestor estando os dois arrays vazios, mas com espaço para o numero de pedidos maximo
-//    GESTOR_PEDIDOS gestor = (GESTOR_PEDIDOS) malloc(sizeof(struct gestor_pedidos)); 
-//    int fd = open(config_file, O_RDONLY, 0666),i=0;
-//    char buffer[50];
-//    int pedidosMax=0;
-//
-//    while (readln(fd, buffer, 50) > 0) { //enquanto nao chega a EOF...
-//        /* Assume-se que o ficheiro está bem parsado
-//        Exemplo de ficheiro bem parsado:
-//        ---------------
-//        nop 3
-//        bcompress 4
-//        bdecompress 4
-//        ---------------
-//        */
-//        char* transf = strtok(buffer, " "); //strtok pode dar problemas com varios processos?
-//        int max = atoi(strtok(NULL, " "));
-//        i=transf_to_code(transf);
-//        // Caso apareca transformação desconhecida
-//        if(i==-1){
-//            write(2,"ERROR: UNKNOWN TRANSFORMATION IN CONFIGURATION FILE!!!",55);
-//        }
-//        gestor->maximo[i] = max;
-//        pedidosMax+=max;
-//        gestor->atual[i] = 0;
-//    }
-//    close(fd);
-//
-//    gestor->pedidosEmExecucao = malloc(sizeof(PEDIDO)*pedidosMax);
-//    gestor->pedidosEmEspera = malloc(sizeof(PEDIDO));
-//
-//    //strncpy evita escrever em regiao de memoria nao alocada
-//    strncpy(gestor->transformation_folder,transf_folder, sizeof(gestor->transformation_folder));
-//    printf("str - %s\n", gestor->transformation_folder);
-//
-//    gestor->nPedidosMax = pedidosMax;
-//    gestor->nPedidosEmEspera = 0;
-//    gestor->nPedidosEmExecucao = 0;
-//    return gestor;
-//}
 
 GESTOR_PEDIDOS createGestorPedidos( char* config_file, char* transf_folder) {
     //Cria o gestor estando os dois arrays vazios, mas com espaço para o numero de pedidos maximo
@@ -108,6 +57,34 @@ GESTOR_PEDIDOS createGestorPedidos( char* config_file, char* transf_folder) {
 }
 
 /*
+Tenta inserir na fila de execucao o pedido com maior prioridade que esta na fila de espera.
+*/
+void tryInserirPedido(GESTOR_PEDIDOS gp) {
+    int i, usados[7];
+    int* atualT = gp->atual;
+    int* maxT = gp->maximo;
+    NODO nodo = gp->pedidosEspera;
+    if (nodo == NULL) return; //A fila de espera esta vazia.
+    PEDIDO pedido = getNodoPedido(gp->pedidosEspera); //pedido com maior prioridade para entrar na fila de espera. (é o nodo que esta na cabeça da lista ligada)
+
+    createAtualArray(gp); //atualiza o array atual com as transformacoes a ser usadas.
+
+    for (i = 0; i<7; i++) {
+        int ocorrencias = ocorrenciasTransformacao(pedido, i);
+        usados[i] = ocorrencias;
+        if (atualT[i] + ocorrencias > maxT[i]) { //nao pode inserir porque um recurso excede
+            //O pedido ainda nao pode ser introduzido na fila de execucao
+            return; //colocar na fila de espera, A FAZER....  break; e depois adicionar a fila de espera com certa ordem
+        }
+    }
+    //se chegou a este ponto, entao o pedido tem espaço para entrar na fila de execucao, entao introduz-se
+    int pid = getPidPedido(pedido);
+    removerNodo(&(gp->pedidosEspera), pid); //remover o pedido da fila de espera, dado que vai ser introduzido na fila de execucao
+    inserirPedido(gp, pedido);
+
+}
+
+/*
 Tenta inserir um pedido no gestor de pedidos. Apenas insere se for possivel inserir, tendo em conta o maximo
 de cada transformação
 */
@@ -124,7 +101,7 @@ void inserirPedido(GESTOR_PEDIDOS gp, PEDIDO p) {
         if (atualT[i] + ocorrencias > maxT[i]) { //nao pode inserir porque um recurso excede
             write(1,"[GESTOR_PEDIDOS]: Nao consegue inserir pedido, tem que ir pra fila de espera\n",78);
             alertPedidoEmEspera(p);
-            inserirNodo(&(gp->pedidosExecucao),nodo);
+            inserirNodo(&(gp->pedidosEspera),nodo);
             return; //colocar na fila de espera, A FAZER....  break; e depois adicionar a fila de espera com certa ordem
         }
     }
@@ -187,6 +164,7 @@ void createAtualArray(GESTOR_PEDIDOS gp) {
         //Para cada pedido no conjunto de pedidos em execucao, incrementa no atualArray a utilizaçao de transformaçoes do pedido
         PEDIDO pedidoAtual = getNodoPedido(aux);
         addOcorrenciasTransformacoes(atualArray, pedidoAtual);
+        aux = getProxNodo(aux);
     }
 }
 

@@ -47,7 +47,7 @@ void removerNodo(NODO* cabeca_ll, int pidPedido) {
         NODO nodoRemovido = *cabeca_ll;
         *cabeca_ll = (*cabeca_ll)->prox;
         nodoRemovido->prox = NULL;
-        freeNodo(nodoRemovido);
+        //freeNodo(nodoRemovido);
     }
 }
 

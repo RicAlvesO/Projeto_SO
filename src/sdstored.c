@@ -96,8 +96,18 @@ int main(int argc, char* argv[]) {
             */
             while(1) {
                 while ((pid = waitpid(-1,&status,WNOHANG)) > 0) { //enquanto houverem pedidos terminados
+                    /*
+                    O corpo deste ciclo corre por cada processo filho que termina, ou seja, por cada pedido que termina.
+                    Dado que um pedido acaba de ser terminado, é preciso remover o pedido do conjunto de pedidos a serem executados
+                    E é preciso verificar se algum pedido na fila de espera pode começar a ser executado (tryInserirPedido).
+                    */
                     removerPedido(gp, pid); //remove do gestor de pedidos o pedido cujo processo acabou
+                    printf("pedido removido pid - %d\n", pid);
+                    createAtualArray(gp); //atualiza o array atual
+                    tryInserirPedido(gp);
+                    
                 }
+                
                 while ((pedido = readPedido(pedidos[0])) != NULL) { //enquanto houver pedidos
                     printf("Leu um pedido\n");
                     setPedidoNth(pedido, i); i++;
@@ -123,20 +133,6 @@ int main(int argc, char* argv[]) {
             close(serverConsumidorGestorProdutor[1]);
 
             char buffer[128]; //path para o fifo
-            //if (mkfifo(fifo_geral,0666) == -1) {
-            //    write(1,"[SERVIDOR]: fifo ja criado\n", 28);
-            //}
-            /*
-            Nesta seccao é aberto um descritor de escrita permanente auxiliar para o fifo_geral, de maneira a que este
-            nao seja fechado quando um cliente acaba e fecha o seu descritor do fifo_geral.
-            
-            if (fork() == 0) {
-                printf("AQUI1\n");
-                _exit(0);
-            }
-            */    
-            //int fifoaux = open(fifo_geral, O_RDONLY); //este fifo so serve para o read nao ler EOF.
-            //Nao se usara o fifoaux.
             
             int fifo = open(fifo_geral, O_RDONLY); //o servidor so precisa de ler linhas do fifo geral.
             
@@ -170,100 +166,5 @@ int main(int argc, char* argv[]) {
 
             break;
     }
-
-    //switch(fork()) {
-    //    case -1:
-    //        printf("erro\n");
-    //        break;
-    //    case 0:
-    //        close(pedidos[1]);
-    //        close(serverProdutorGestorConsumidor[1]);
-    //        close(serverConsumidorGestorProdutor[0]);
-    //        int pid, status, x;
-    //        PEDIDO pedido;
-    //        GESTOR_PEDIDOS gp = createGestorPedidos(argv[1]);
-    //        //codigo filho,  gere os pedidos, recebe pedidos novos do pai
-    //        int retval1 = fcntl(pedidos[0], F_SETFL, fcntl(pedidos[0], F_GETFL) | O_NONBLOCK);
-    //        int retval2 = fcntl(serverProdutorGestorConsumidor[0], F_SETFL, fcntl(serverProdutorGestorConsumidor[0], F_GETFL) | O_NONBLOCK);
-    //        printf("Ret1 from fcntl: %d\n", retval1);
-    //        printf("Ret2 from fcntl: %d\n", retval2);
-    //        /*
-    //        Este ciclo while serve para gerir os pedidos
-    //        Ele a todo o momento verifica se algum pedido acabou (waitpid), e se de facto acabou ele atualiza
-    //        */
-    //        while(1) {
-    //            while ((pid = waitpid(-1,&status,WNOHANG)) > 0) { //enquanto houverem pedidos terminados
-    //                printf("Acabou um pedido\n");
-    //                removerPedido(gp, pid); //remove do gestor de pedidos o pedido cujo processo acabou
-    //            }
-    //            while ((pedido = readPedido(pedidos[0])) != NULL) { //enquanto houver pedidos
-    //                printf("Leu um pedido\n");
-    //                setPedidoNth(pedido, i); i++;
-    //                char* str = getPedidoStr(pedido);
-    //                printf("pedido - %s\n", str);
-    //                inserirPedido(gp, pedido);
-    //                //printPedido(pedido);
-    //            }
-    //            if((read(serverProdutorGestorConsumidor[0], &x, sizeof(int))) > 0) { //se o processo pai quiser o estado do servidor, manda o estado do servidor
-    //                //Se não houver nada para ler no pipe, este devolve -1 e continua execuçao, dado que o read neste pipe é nao bloqueador
-    //                SERVER serverAtual = createServerFromGestor(gp); //cria o estado atual do servidor
-    //                writeServer(serverAtual, serverConsumidorGestorProdutor[1]);
-    //                //freeServer(&serverAtual);
-    //            }
-//
-    //            usleep(50000); //espera 50 milissegundos
-    //        }
-    //        break;
-    //    default:
-    //        //codigo pai, apenas le input dos clientes, e manda os inputs para o processo que gere os pedidos
-    //        close(pedidos[0]); //pai so vai escrever os pedidos para o gestor de pedidos
-    //        close(serverProdutorGestorConsumidor[0]);
-    //        close(serverConsumidorGestorProdutor[1]);
-    //        while(1) {
-    //            int c = -1;
-    //            fd = open(myfifo, O_RDONLY);
-    //            read(fd, &c, sizeof(int));
-    //            //close(fd);
-    //            if (c==0) { // 0 -> ler status, logo passamos a struct server
-    //                write(serverProdutorGestorConsumidor[1], &c, sizeof(int)); //manda qualquer coisa para o gestor para ele saber que o processo pai precisa do estado do servidor
-    //                SERVER server = readServer(serverConsumidorGestorProdutor[0]); //le o servidor no estado atual do pipe para onde o gestor escreveu
-    //                close(fd);
-    //                fd = open(myfifo, O_WRONLY);
-    //                writeServer(server,fd); //manda o estado atual do servidor para o cliente, pelo fifo
-    //            } else if (c==1) {
-    //                /*
-    //                Se c == 1, então é para ler um pedido, por isso logo asseguir le um pedido do fifo.
-    //                Depois de ler o pedido, escreve o pedido para o processo que gere os pedidos (pelo fds[1]);
-    //                */
-    //                PEDIDO pedido = readPedido(fd);
-    //                writePedido(pedido,pedidos[1]);
-    //            }
-    //            close(fd);
-    //        }
-    //        break;
-    //    }
-
-    /*
-    CODIGO PARA TESTAR, mostra que funciona transmitir o estado do servidor por pipes
-    ---------------------------------------------------------------------
-    int fds[2];
-    pipe(fds);
-    if (fork() == 0) {
-        //codigo filho, consumidor
-        close(fds[1]);
-        SERVER server1 = readServer(fds[0]);
-        printf("[SERVER1]: \n");
-        printServerStatus(server1);
-    } else {
-        //codigo pai, produtor
-        close(fds[0]);
-        SERVER server = createServer(argv[1]); //crio o server a partir do ficheiro de config
-        writeServer(server, fds[1]); //escrevo o server para a pipe sem nome
-        freeServer(&server); //dou free ao server
-        close(fds[1]);
-    }
-    --------------------------------------------------------------------
-    */
-    
     return 1;
 }

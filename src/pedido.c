@@ -52,16 +52,6 @@ void writePedido(PEDIDO pedido, int fd) {
     }
 }
 
-//le um pedido do file descriptor fd e mete na struct pedido. Devolve o numero de bytes lidos
-//int readPedido(PEDIDO pedido, int fd) {
-//    int ret;
-//    if ((ret = read(fd, pedido, sizeof(struct pedido))) != sizeof(struct pedido)) {
-//        //write(2, "nao conseguiu ler no fifo: ", 28);
-//        return ret;
-//    }
-//    return 2;
-//}
-
 PEDIDO readPedido(int fd) {
     int ret;
     PEDIDO pedido1 = createEmptyPedido();
@@ -135,26 +125,6 @@ char* getPedidoStr(PEDIDO p) {
 Recebe um array de pedidos, o tamanho do array, e devolve uma string com todos os pedidos dentro.
 Tambem mete no conteudo de tamanhoStr o tamanho da string toda.
 */
-//char* getAllPedidosStr(PEDIDO* pedidos, int N, int* tamanhoStr) {
-//    int tamanhoTotal = 0, i;
-//    for (i=0; i<N; i++) {
-//        PEDIDO pedidoAtual = pedidos[i];
-//        tamanhoTotal += getTamanhoPedidoStr(pedidoAtual);
-//        tamanhoTotal++; //Somar um ao tamanho por causa do \n 
-//    }
-//    *tamanhoStr = tamanhoTotal;
-//
-//    char* str = malloc(sizeof(char) * tamanhoTotal); //aloca uma string com espaço para o pedido todo em forma de string
-//    str[0] = '\0';
-//    for (i=0; i<N; i++) {
-//        PEDIDO pedidoAtual = pedidos[i];
-//        char* pedidoAtualStr = getPedidoStr(pedidoAtual);
-//        strcat(str, pedidoAtualStr);
-//        strcat(str, "\n"); //fazer paragrafo para o proximo pedido estar noutra linha
-//        //free(pedidoAtualStr); //este free estava a dar o erro 'free(): invalid pointer'
-//    }
-//    return str;
-//}
 
 int getNTransformacoes(PEDIDO p) {
     return p->ntransformacoes;
@@ -177,30 +147,6 @@ int ocorrenciasTransformacao(PEDIDO p, int transf) {
     }
     return sum;
 }
-
-/*
- * Executa o pedido p no processo atual
- *
- * Para executar o pedido atraves do codigo da transformacao
- * usar code_to_transf que retorna string da transformacao
- */
-//void executarPedido(PEDIDO p) {
-//    int pid;
-//    
-//    if ((pid = fork()) == 0) {
-//        /*
-//        Codigo do processo filho, que vai executar o pedido
-//        */
-//        printf("[PEDIDO]: Vou dormir\n");
-//        sleep(3);
-//        printf("[PEDIDO]: Dormi\n");
-//        alertPedidoConcluido(p);
-//        _exit(0);
-//    } else {
-//        setPid(p,pid);
-//    }
-//
-//}
 
 void setPid(PEDIDO p,int pid) {
     p->pid = pid;
@@ -362,6 +308,7 @@ void executarPedido(PEDIDO p, char* folder_path) {
         int outputFd;
         if ((inputFd = open(p->inputPath, O_RDONLY, 0666)) == -1) {
             write(2, "Erro a abrir ficheiro input\n",29);
+            perror("erro: ");
         }
         if ((outputFd = open(p->outputPath, O_WRONLY | O_CREAT, 0666)) == -1) {
             write(2, "Erro a abrir ficheiro output\n", 30);
@@ -464,7 +411,9 @@ void executarPedido(PEDIDO p, char* folder_path) {
                 //printf("[PAI]: filho terminou com %d\n", WEXITSTATUS(status[i]));
             }
         }
-        //sleep(3);
+        sleep(3);
+        close(inputFd);
+        close(outputFd);
         alertPedidoConcluido(p);
         _exit(0);
     } else {
