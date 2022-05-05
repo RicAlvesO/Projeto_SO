@@ -92,8 +92,6 @@ int main(int argc, char* argv[]) {
         */
         if ((fdProdutor = open(fifo_geral, O_WRONLY)) == -1) {
             write(1,"[CLIENTE]: nao conseguiu abrir fifo_geral\n",43);
-        } else {
-            printf("abriu fifogeral\n");
         }
         write (fdProdutor, myfifo, sizeof(myfifo)); //maximo 128 caracteres
         close(fdProdutor);

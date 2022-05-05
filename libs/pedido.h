@@ -30,7 +30,7 @@ void setClienteFifoStr(PEDIDO p, char* fifoPath);
 void openClienteFd(PEDIDO p);
 void alertPedidoEmEspera(PEDIDO p);
 void alertPedidoInserido(PEDIDO p);
-void alertPedidoConcluido(PEDIDO p);
+void alertPedidoConcluido(PEDIDO p, int bytesIn, int bytesOut);
 PEDIDO encontrarPedido(PEDIDO* pedidos, int N, int pid);
 void addOcorrenciasTransformacoes(int* atualArray, PEDIDO p);
 int executaTransformacao(char* path, int transformacao);

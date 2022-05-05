@@ -79,7 +79,7 @@ $ ./sdstore status
 Printa o estado do server
 */
 void printServerStatus(SERVER server) {
-    printf("A printar o Server\n");
+    //printf("A printar o Server\n");
     int i=0, max = 7;
     printf("%s", server->pedidos);
     for (;i<max;i++) {

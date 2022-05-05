@@ -1,4 +1,5 @@
 #include "../libs/pedido.h"
+#include "../libs/funcoes.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -250,9 +251,11 @@ void alertPedidoInserido(PEDIDO p) {
     write(p->fdCliente, "processing\n", 11);
 }
 
-void alertPedidoConcluido(PEDIDO p) {
+void alertPedidoConcluido(PEDIDO p, int bytesIn, int bytesOut) {
     //assume que o file descriptor do cliente esta aberto
-    write(p->fdCliente, "concluding\n", 11);
+    char str[128];
+    sprintf(str, "concluded (bytes-input: %d, bytes-output: %d)\n", bytesIn, bytesOut);
+    write(p->fdCliente, str, strlen(str));
     write(p->fdCliente, "end\n", 4);
 }
 
@@ -325,44 +328,14 @@ void executarPedido(PEDIDO p, char* folder_path) {
             }
         }
 
-        for (i = 0; i < ntransf; i++) {
-
-            if (i == 0) {
-                switch(fork()) {
+        if (ntransf == 1) { //so ha uma transformacao
+            switch(fork()) {
                     case -1:
                         perror("Fork não foi efetuado");
                         return;
                     case 0:
-                        // codigo do filho 0
-
-                        close(pipes[i][0]);
-
-                        dup2(pipes[i][1],1);
-                        close(pipes[i][1]);
-
                         dup2(inputFd,0);
                         close(inputFd);
-
-                        executaTransformacao(folder_path,transf[i]);
-
-                        _exit(0);
-
-                    default:
-                        close(pipes[i][1]);
-                }
-            }
-            else if (i == ntransf-1) {
-                switch(fork()) {
-                    case -1:
-                        perror("Fork não foi efetuado");
-                        return;
-                    case 0:
-                        // codigo do filho n-1
-
-                        //if(close(p[i-1][1]) != 0) perror("close");
-
-                        dup2(pipes[i-1][0],0);
-                        close(pipes[i-1][0]);
 
                         dup2(outputFd,1);
                         close(outputFd);
@@ -370,39 +343,91 @@ void executarPedido(PEDIDO p, char* folder_path) {
                         executaTransformacao(folder_path,transf[i]);
 
                         _exit(0);
-
+                        break;
                     default:
-                        close(pipes[i-1][0]);
+                        //codigo pai
+                        break;
+            }
+        } else {
+            for (i = 0; i < ntransf; i++) {
+                if (i == 0) {
+                    switch(fork()) {
+                        case -1:
+                            perror("Fork não foi efetuado");
+                            return;
+                        case 0:
+                            // codigo do filho 0
+
+                            close(pipes[i][0]);
+
+                            dup2(pipes[i][1],1);
+                            close(pipes[i][1]);
+
+                            dup2(inputFd,0);
+                            close(inputFd);
+
+                            executaTransformacao(folder_path,transf[i]);
+
+                            _exit(0);
+
+                        default:
+                            close(pipes[i][1]);
+                    }
+                }
+                else if (i == ntransf-1) {
+                    switch(fork()) {
+                        case -1:
+                            perror("Fork não foi efetuado");
+                            return;
+                        case 0:
+                            // codigo do filho n-1
+
+                            //if(close(p[i-1][1]) != 0) perror("close");
+
+                            dup2(pipes[i-1][0],0);
+                            close(pipes[i-1][0]);
+
+                            dup2(outputFd,1);
+                            close(outputFd);
+
+                            executaTransformacao(folder_path,transf[i]);
+
+                            _exit(0);
+
+                        default:
+                            close(pipes[i-1][0]);
+                    }
+                }
+                else {
+                    switch(fork()) {
+                        case -1:
+                            perror("Fork não foi efetuado");
+                            return;
+                        case 0:
+                            // codigo do filho i
+
+                            //if(close(p[i-1][1]) != 0){perror("close");}
+                            close(pipes[i][0]);
+
+                            dup2(pipes[i][1],1);
+                            close(pipes[i][1]);
+
+                            dup2(pipes[i-1][0],0);
+                            close(pipes[i-1][0]);
+
+                            executaTransformacao(folder_path,transf[i]);
+
+                            _exit(0);
+
+                        default:
+                            close(pipes[i-1][0]);
+                            close(pipes[i][1]);
+                    }
                 }
             }
-            else {
-                switch(fork()) {
-                    case -1:
-                        perror("Fork não foi efetuado");
-                        return;
-                    case 0:
-                        // codigo do filho i
-
-                        //if(close(p[i-1][1]) != 0){perror("close");}
-                        close(pipes[i][0]);
-
-                        dup2(pipes[i][1],1);
-                        close(pipes[i][1]);
-
-                        dup2(pipes[i-1][0],0);
-                        close(pipes[i-1][0]);
-
-                        executaTransformacao(folder_path,transf[i]);
-
-                        _exit(0);
-
-                    default:
-                        close(pipes[i-1][0]);
-                        close(pipes[i][1]);
-                }
-            }
-
         }
+
+        
 
         for (i = 0; i < ntransf; i++) {
             wait(&status[i]);
@@ -411,10 +436,12 @@ void executarPedido(PEDIDO p, char* folder_path) {
                 //printf("[PAI]: filho terminou com %d\n", WEXITSTATUS(status[i]));
             }
         }
+        int bytesIn = contarBytes(p->inputPath); //bytes input
+        int bytesOut = contarBytes(p->outputPath); //bytes output
         sleep(3);
         close(inputFd);
         close(outputFd);
-        alertPedidoConcluido(p);
+        alertPedidoConcluido(p, bytesIn, bytesOut);
         _exit(0);
     } else {
         //enquanto o filho executa o pedido, o pai continua a execuçao, atribuindo o pid do processo ao pedido que ele executa.
