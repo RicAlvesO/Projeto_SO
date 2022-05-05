@@ -58,14 +58,15 @@ GESTOR_PEDIDOS createGestorPedidos( char* config_file, char* transf_folder) {
 
 /*
 Tenta inserir na fila de execucao o pedido com maior prioridade que esta na fila de espera.
+retorna 1 se conseguiu inserir o pedido, retorna 0 se nao conseguiu
 */
-void tryInserirPedido(GESTOR_PEDIDOS gp) {
+int tryInserirPedido(GESTOR_PEDIDOS gp) {
     int i, usados[7];
     int* atualT = gp->atual;
     int* maxT = gp->maximo;
     NODO nodo = gp->pedidosEspera;
-    if (nodo == NULL) return; //A fila de espera esta vazia.
-    PEDIDO pedido = getNodoPedido(gp->pedidosEspera); //pedido com maior prioridade para entrar na fila de espera. (é o nodo que esta na cabeça da lista ligada)
+    if (nodo == NULL) return 0; //A fila de espera esta vazia.
+    PEDIDO pedido = getNodoPedido(nodo); //pedido com maior prioridade para entrar na fila de espera. (é o nodo que esta na cabeça da lista ligada)
 
     createAtualArray(gp); //atualiza o array atual com as transformacoes a ser usadas.
 
@@ -74,14 +75,14 @@ void tryInserirPedido(GESTOR_PEDIDOS gp) {
         usados[i] = ocorrencias;
         if (atualT[i] + ocorrencias > maxT[i]) { //nao pode inserir porque um recurso excede
             //O pedido ainda nao pode ser introduzido na fila de execucao
-            return; //colocar na fila de espera, A FAZER....  break; e depois adicionar a fila de espera com certa ordem
+            return 0; //colocar na fila de espera, A FAZER....  break; e depois adicionar a fila de espera com certa ordem
         }
     }
     //se chegou a este ponto, entao o pedido tem espaço para entrar na fila de execucao, entao introduz-se
     int pid = getPidPedido(pedido);
     removerNodo(&(gp->pedidosEspera), pid); //remover o pedido da fila de espera, dado que vai ser introduzido na fila de execucao
     inserirPedido(gp, pedido);
-
+    return 1;
 }
 
 /*
@@ -112,6 +113,14 @@ void inserirPedido(GESTOR_PEDIDOS gp, PEDIDO p) {
     inserirNodo(&(gp->pedidosExecucao),nodo);
     alertPedidoInserido(p);
     executarPedido(p, gp->transformation_folder);
+}
+
+/*
+Devolve um boleano que representa se o servidor esta vazio, isto é, se nao ha pedidos na fila de espera 
+nem na fila de execucao
+*/
+int gestorIsEmpty(GESTOR_PEDIDOS gp) {
+    return gp->pedidosExecucao == NULL && gp->pedidosEspera == NULL;
 }
 
 /*

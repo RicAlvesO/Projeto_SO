@@ -438,7 +438,7 @@ void executarPedido(PEDIDO p, char* folder_path) {
         }
         int bytesIn = contarBytes(p->inputPath); //bytes input
         int bytesOut = contarBytes(p->outputPath); //bytes output
-        sleep(3);
+        sleep(5);
         close(inputFd);
         close(outputFd);
         alertPedidoConcluido(p, bytesIn, bytesOut);
