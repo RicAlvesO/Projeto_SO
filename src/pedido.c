@@ -49,7 +49,7 @@ void writePedido(PEDIDO pedido, int fd) {
     //    write(2, "nao conseguiu escrever no fifo: ", 33);
     //}
     if (write(fd, pedido, sizeof(*pedido) + pedido->ntransformacoes * sizeof(pedido->transformacoes[0])) != (sizeof(*pedido) + pedido->ntransformacoes * sizeof(pedido->transformacoes[0]))) {
-        write(2, "nao conseguiu escrever pedido\n", 31);
+        write(2, "[ERROR]: Nao conseguiu escrever o pedido\n", 42);
     }
 }
 
@@ -66,20 +66,23 @@ PEDIDO readPedido(int fd) {
     free_pedido(pedido1);
     pedido2->transformacoes = (int*) (((char*)pedido2) + sizeof(struct pedido));
     if ((ret = read(fd, pedido2->transformacoes, pedido2->ntransformacoes * sizeof(pedido2->transformacoes[0]))) != pedido2->ntransformacoes * sizeof(pedido2->transformacoes[0])) {
-        write(2, "nao conseguiu ler as transformacoes ", 37);
+        write(2, "[ERROR]: Nao conseguiu ler as transformacoes ", 46);
     }
     return pedido2;
 }
 
 void printPedido(PEDIDO p) {
-    printf("A printar pedido\n");
-    printf("Prio - %d\n", p->prioridade);
-    printf("Input path - %s\n", p->inputPath);
-    printf("Output path - %s\n", p->outputPath);
-    printf("nTransf - %d\n", p->ntransformacoes);
+    char s[10000];
+    char s1[1000];
+    char s2[1] = "\0";
+    write(2,"A printar pedido\n",18);
+    sprintf(s,"Prio - %d\nInput path - %s\nOutput path - %s\nnTransf - %d\n", p->prioridade,p->inputPath, p->outputPath, p->ntransformacoes);
     for (int i = 0; i<p->ntransformacoes; i++) {
-        printf("Transformacao - %s\n", code_to_transf(p->transformacoes[i]));
+        sprintf(s1,"Transformacao - %s\n", code_to_transf(p->transformacoes[i]));
+        strcat(s,s1);
     }
+    strcat(s,s2);
+    write(2,s,strlen(s));
 }
 
 /*
@@ -254,7 +257,7 @@ void alertPedidoInserido(PEDIDO p) {
 void alertPedidoConcluido(PEDIDO p, int bytesIn, int bytesOut) {
     //assume que o file descriptor do cliente esta aberto
     char str[128];
-    sprintf(str, "concluded (bytes-input: %d, bytes-output: %d)\n", bytesIn, bytesOut);
+    sprintf(str, "[PEDIDO]: concluded (bytes-input: %d, bytes-output: %d)\n", bytesIn, bytesOut);
     write(p->fdCliente, str, strlen(str));
     write(p->fdCliente, "end\n", 4);
 }

@@ -40,7 +40,7 @@ GESTOR_PEDIDOS createGestorPedidos( char* config_file, char* transf_folder) {
         i=transf_to_code(transf);
         // Caso apareca transformação desconhecida
         if(i==-1){
-            write(2,"ERROR: UNKNOWN TRANSFORMATION IN CONFIGURATION FILE!!!",55);
+            write(2,"[ERROR]: UNKNOWN TRANSFORMATION IN CONFIGURATION FILE!!!",55);
         }
         gestor->maximo[i] = max;
         gestor->atual[i] = 0;

@@ -15,7 +15,7 @@ int requests(int argc, char* argv[]){
 
     // Check for right command
     if (strcmp(argv[1], "proc-file") != 0){
-        write(2, "COMMAND NOT FOUND!\n", 20);
+        write(2, "[ERROR]:Comando não encontrado\n", 33);
         return -1;
     }
 
@@ -32,7 +32,7 @@ int requests(int argc, char* argv[]){
     char *in=strdup(argv[cur]);
     cur++;
     if (access(in, F_OK) == -1){
-        write(2, "INPUT FILE NOT FOUND!\n", 23);
+        write(2, "[ERROR]: Ficheiro de entrada não encontrado\n", 46);
         return -1;
     }
 
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
     } else if (argc < 3){
 
         // Not enough arguments for requests
-        write(2,"NOT ENOUGH ARGUMENTS PROVIDED!\n",32);
+        write(2,"[ERROR]: Argumentos insuficientes\n",35);
         return -1;
     }
 

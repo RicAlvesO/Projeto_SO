@@ -50,8 +50,10 @@ int verifyBinFiles(char* path){
 int main(int argc, char* argv[]) {
     char* fifo_geral = "fifos/fifo_geral";
     int i=1, status, pid;
-    printf("pid servidor - %d\n", getpid());
-
+    char s1[50],s2[50];
+    sprintf(s1,"[SERVIDOR]: (pid)%d\n",getpid());
+    write(2,s1,strlen(s1));
+    
     signal(SIGTERM, term);
     
     // Argument Verifications
@@ -98,7 +100,7 @@ int main(int argc, char* argv[]) {
                 freeServer(&server);
             } else if (x==1) { // -> cliente vai enviar pedido
                 PEDIDO pedido = readPedido(fdLeitura);
-                printf("Leu um pedido\n");
+                write(2,"[SERVIDOR]: Pedido lido\n",25);
                 setClienteFifoStr(pedido, fifoEscrita);
                 setPedidoNth(pedido, i); i++;
                 openClienteFd(pedido);
@@ -116,10 +118,11 @@ int main(int argc, char* argv[]) {
             E é preciso verificar se algum pedido na fila de espera pode começar a ser executado (tryInserirPedido).
             */
             removerPedido(gp, pid); //remove do gestor de pedidos o pedido cujo processo acabou
-            printf("pedido removido pid - %d\n", pid);
+            sprintf(s2,"[SERVIDOR]: Pedido removido (pid)%d\n",getpid());
+            write(2,s2,strlen(s2));
+            
             createAtualArray(gp); //atualiza o array atual
             while(tryInserirPedido(gp)); //tenta inserir na fila de execucao pedidos que estao na fila de espera.
         }
-        usleep(50000);
     }
 }
