@@ -73,7 +73,7 @@ int tryInserirPedido(GESTOR_PEDIDOS gp) {
     for (i = 0; i<7; i++) {
         int ocorrencias = ocorrenciasTransformacao(pedido, i);
         usados[i] = ocorrencias;
-        if (atualT[i] + ocorrencias > maxT[i]) { //nao pode inserir porque um recurso excede
+        if (atualT[i] + usados[i] > maxT[i]) { //nao pode inserir porque um recurso excede
             //O pedido ainda nao pode ser introduzido na fila de execucao
             return 0; //colocar na fila de espera, A FAZER....  break; e depois adicionar a fila de espera com certa ordem
         }

@@ -10,45 +10,6 @@
 #include "../libs/pedido.h"
 #include "../libs/funcoes.h"
 
-// Function that handles client requests
-int requests(int argc, char* argv[]){
-
-    // Check for right command
-    if (strcmp(argv[1], "proc-file") != 0){
-        write(2, "[ERROR]:Comando não encontrado\n", 33);
-        return -1;
-    }
-
-    // First argument to check + priority
-    int cur=2, prio=0;
-
-    // Check if priority is given
-    if(isdigit(atoi(argv[1]))){
-        cur++;
-        prio=atoi(argv[1]);
-    }
-
-    // Get input file + verify existence
-    char *in=strdup(argv[cur]);
-    cur++;
-    if (access(in, F_OK) == -1){
-        write(2, "[ERROR]: Ficheiro de entrada não encontrado\n", 46);
-        return -1;
-    }
-
-    // Get where to output
-    //char *out=strdup(argv[cur]);
-    cur++;
-
-    // Loop for the remaining operations to apply
-    while(cur < argc)
-    {
-        cur++;
-    }
-
-    return 1;
-}
-
 int main(int argc, char* argv[]) {
     int fdProdutor, fdConsumidor, x, i=0;
     char myfifo[128], fifoProdutor[128], fifoConsumidor[128];
@@ -134,13 +95,21 @@ int main(int argc, char* argv[]) {
         fdProdutor = open(fifoProdutor, O_WRONLY);
         fdConsumidor = open(fifoConsumidor, O_RDONLY);
 
-        int priority = atoi(argv[2]);
-        char* inputPath = argv[3];
-        char* outputPath = argv[4];
-        int ntransf = argc - 5;
+        int cur=2,priority;
+        if(strcmp(argv[cur],"-p")==0){
+            cur++;
+            priority=atoi(argv[cur]);
+            cur++;
+        }
+
+        char* inputPath = argv[cur];
+        cur++;
+        char* outputPath = argv[cur];
+        cur++;
+        int ntransf = argc - cur;
         char* transformacoes[ntransf];
         for (int i=0; i<ntransf; i++) {
-            transformacoes[i] = argv[i + 5];
+            transformacoes[i] = argv[i + cur];
         }
         PEDIDO pedido = createPedido(priority, inputPath, outputPath, ntransf, transformacoes); i++;
 
@@ -175,5 +144,5 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    return requests(argc, argv);
+    return 1;
 }

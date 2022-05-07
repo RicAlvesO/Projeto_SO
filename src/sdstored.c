@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 #include <sys/stat.h> //mkfifo
 #include <sys/wait.h> //waitpid e WNOHANG
 #include "../libs/servidor.h"
@@ -26,7 +27,7 @@ int verifyBinFiles(char* path){
     
         // Create file destinations
         char str[(sizeof(bins[i]) + sizeof(path)) / sizeof(char)] = "";
-        if(path[strlen(path)-1]=="/")path[strlen(path)-1]="\0";
+        if(path[strlen(path)-1]=='/') path[strlen(path)-1]='\0';
         strcat(str, path);
         strcat(str, bins[i]);
         
