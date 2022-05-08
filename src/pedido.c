@@ -294,6 +294,7 @@ int executaTransformacao(char* path, int transformacao) {
     int exec_ret = 0;
     executavel[0] = '\0';
     strncat(executavel, path, 128); //assume-se que o path acaba em /
+    strcat(executavel, "/");
     strcat(executavel, code_to_transf(transformacao)); //converte a transformacao em string e concateneia-la
     exec_args[0] = executavel;
     exec_args[1] = NULL;
@@ -304,7 +305,6 @@ int executaTransformacao(char* path, int transformacao) {
 }
 
 void executarPedido(PEDIDO p, char* folder_path) {
-
     int pid;
 
     if ((pid = fork()) == 0) {
@@ -330,12 +330,12 @@ void executarPedido(PEDIDO p, char* folder_path) {
                 return;
             }
         }
-
         if (ntransf == 1) { //so ha uma transformacao
             switch(fork()) {
                     case -1:
                         perror("Fork não foi efetuado");
                         return;
+                        break;
                     case 0:
                         dup2(inputFd,0);
                         close(inputFd);
@@ -358,21 +358,20 @@ void executarPedido(PEDIDO p, char* folder_path) {
                         case -1:
                             perror("Fork não foi efetuado");
                             return;
+                            break;
                         case 0:
                             // codigo do filho 0
 
                             close(pipes[i][0]);
-
                             dup2(pipes[i][1],1);
                             close(pipes[i][1]);
 
                             dup2(inputFd,0);
                             close(inputFd);
-
                             executaTransformacao(folder_path,transf[i]);
 
                             _exit(0);
-
+                            break;
                         default:
                             close(pipes[i][1]);
                     }

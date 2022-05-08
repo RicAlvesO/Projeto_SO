@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
         fdProdutor = open(fifoProdutor, O_WRONLY);
         fdConsumidor = open(fifoConsumidor, O_RDONLY);
 
-        int cur=2,priority;
+        int cur=2,priority=1;
         if(strcmp(argv[cur],"-p")==0){
             cur++;
             priority=atoi(argv[cur]);
