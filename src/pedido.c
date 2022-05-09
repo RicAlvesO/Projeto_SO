@@ -316,7 +316,7 @@ void executarPedido(PEDIDO p, char* folder_path) {
             write(2, "Erro a abrir ficheiro input\n",29);
             perror("erro: ");
         }
-        if ((outputFd = open(p->outputPath, O_WRONLY | O_CREAT, 0666)) == -1) {
+        if ((outputFd = open(p->outputPath, O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1) {
             write(2, "Erro a abrir ficheiro output\n", 30);
         }
         int pipes[ntransf-1][2];
