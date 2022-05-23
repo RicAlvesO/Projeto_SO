@@ -79,13 +79,14 @@ $ ./sdstore status
 Printa o estado do server
 */
 void printServerStatus(SERVER server) {
-    //printf("A printar o Server\n");
     int i=0, max = 7;
-    printf("%s", server->pedidos);
+    write(1, server->pedidos, strlen(server->pedidos));
     for (;i<max;i++) {
         int maximo = server->maximo[i];
         int atual = server->atual[i];
-        printf("transf %s: %d/%d (running/max)\n",code_to_transf(i), atual, maximo);
+        char s1[128];
+        sprintf(s1, "transf %s: %d/%d (running/max)\n", code_to_transf(i), atual, maximo);
+        write(1, s1, strlen(s1));
     }
 }
 

@@ -26,6 +26,10 @@ int main(int argc, char* argv[]) {
     strcat(fifoConsumidor, "-cliente_consumidor");
     //return 0;
 
+    mkfifo(fifo_geral,0666);
+    mkfifo(fifoConsumidor,0666);
+    mkfifo(fifoProdutor,0666);
+
     if (argc==1) {
     
         // A basic help menu for the client
@@ -37,22 +41,14 @@ int main(int argc, char* argv[]) {
     }else if (argc==2 && strcmp(argv[1],"status") == 0) {
         
         // Get server status, show the current tasks and transfs
-        if (mkfifo(fifo_geral,0666) == -1) {
-            write(1,"[CLIENTE]: fifo_geral ja criado\n", 33);
-        }
-        if (mkfifo(fifoConsumidor,0666) == -1) {
-            write(1,"[CLIENTE]: fifo consumidor ja criado\n", 38);
-        }
-        if (mkfifo(fifoProdutor,0666) == -1) {
-            write(1,"[CLIENTE]: fifo produtor ja criado\n", 36);
-        }
 
         /*
         Depois de ter aberto o fifo geral, manda para la a string contendo o nome do fifo privado deste cliente,
         para que a informacao entre o servidor e este cliente nao seja "roubada" por outros clientes.
         */
-        if ((fdProdutor = open(fifo_geral, O_WRONLY)) == -1) {
-            write(1,"[CLIENTE]: nao conseguiu abrir fifo_geral\n",43);
+        if ((fdProdutor = open(fifo_geral, O_WRONLY | O_NDELAY)) < 0) {
+            write(2, "O servidor nao aceita pedidos de momento\n", 42);
+            return 1;
         }
         write (fdProdutor, myfifo, sizeof(myfifo)); //maximo 128 caracteres
         close(fdProdutor);
@@ -72,22 +68,13 @@ int main(int argc, char* argv[]) {
     } else if (argc > 2 && strcmp(argv[1],"proc-file") == 0) {
         //Apply transformations
 
-        if (mkfifo(fifo_geral,0666) == -1) {
-            write(1,"[CLIENTE]: fifo_geral ja criado\n", 33);
-        }
-        if (mkfifo(fifoConsumidor,0666) == -1) {
-            write(1,"[CLIENTE]: fifo consumidor ja criado\n", 38);
-        }
-        if (mkfifo(fifoProdutor,0666) == -1) {
-            write(1,"[CLIENTE]: fifo produtor ja criado\n", 36);
-        }
-
         /*
         Depois de ter aberto o fifo geral, manda para la a string contendo o nome do fifo privado deste cliente,
         para que a informacao entre o servidor e este cliente nao seja "roubada" por outros clientes.
         */
-        if ((fdProdutor = open(fifo_geral, O_WRONLY)) == -1) {
-            write(1,"[CLIENTE]: nao conseguiu abrir fifo_geral\n",43);
+        if ((fdProdutor = open(fifo_geral, O_WRONLY | O_NDELAY)) < 0) {
+            write(2, "O servidor nao aceita pedidos de momento\n", 42);
+            return 1;
         }
 
         write (fdProdutor, myfifo, sizeof(myfifo)); //maximo 128 caracteres

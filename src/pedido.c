@@ -257,7 +257,7 @@ void alertPedidoInserido(PEDIDO p) {
 void alertPedidoConcluido(PEDIDO p, int bytesIn, int bytesOut) {
     //assume que o file descriptor do cliente esta aberto
     char str[128];
-    sprintf(str, "[PEDIDO]: concluded (bytes-input: %d, bytes-output: %d)\n", bytesIn, bytesOut);
+    sprintf(str, "concluded (bytes-input: %d, bytes-output: %d)\n", bytesIn, bytesOut);
     write(p->fdCliente, str, strlen(str));
     write(p->fdCliente, "end\n", 4);
 }
@@ -433,10 +433,6 @@ void executarPedido(PEDIDO p, char* folder_path) {
 
         for (i = 0; i < ntransf; i++) {
             wait(&status[i]);
-
-            if (WIFEXITED(status[i])) {
-                //printf("[PAI]: filho terminou com %d\n", WEXITSTATUS(status[i]));
-            }
         }
         int bytesIn = contarBytes(p->inputPath); //bytes input
         int bytesOut = contarBytes(p->outputPath); //bytes output
@@ -447,7 +443,6 @@ void executarPedido(PEDIDO p, char* folder_path) {
         _exit(0);
     } else {
         //enquanto o filho executa o pedido, o pai continua a execuçao, atribuindo o pid do processo ao pedido que ele executa.
-        printf("[PEDIDO]: pedido pid: %d\n", pid);
         setPid(p,pid);
     }
 }
