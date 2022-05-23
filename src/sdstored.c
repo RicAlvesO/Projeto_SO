@@ -11,6 +11,12 @@
 #include "../libs/gestor_pedidos.h"
 
 volatile sig_atomic_t terminandoGraciosamente = 0;
+int filhosPorTerminar = 0;
+
+void sig_chld_handler(int signum) {
+    printf("entrou no handler\n");
+    filhosPorTerminar++;
+}
 
 void term(int signum)
 {
@@ -56,6 +62,7 @@ int main(int argc, char* argv[]) {
     write(2,s1,strlen(s1));
     
     signal(SIGTERM, term);
+    signal(SIGCHLD, sig_chld_handler);
     
     // Argument Verifications
     if (argc != 3){
@@ -112,7 +119,22 @@ int main(int argc, char* argv[]) {
         }
 
         //wait nao bloqueador para esperar por pedidos
-        while ((pid = waitpid(-1,&status,WNOHANG)) > 0) { //enquanto houverem pedidos terminados
+        //while ((pid = waitpid(-1,&status,WNOHANG)) > 0) { //enquanto houverem pedidos terminados
+        //    /*
+        //    O corpo deste ciclo corre por cada processo filho que termina, ou seja, por cada pedido que termina.
+        //    Dado que um pedido acaba de ser terminado, é preciso remover o pedido do conjunto de pedidos a serem executados
+        //    E é preciso verificar se algum pedido na fila de espera pode começar a ser executado (tryInserirPedido).
+        //    */
+        //    removerPedido(gp, pid); //remove do gestor de pedidos o pedido cujo processo acabou
+        //    sprintf(s2,"[SERVIDOR]: Pedido removido (pid)%d\n",getpid());
+        //    write(2,s2,strlen(s2));
+        //    
+        //    createAtualArray(gp); //atualiza o array atual
+        //    while(tryInserirPedido(gp)); //tenta inserir na fila de execucao pedidos que estao na fila de espera.
+        //}
+        while (filhosPorTerminar > 0) {
+            filhosPorTerminar--;
+            pid = wait(&status);
             /*
             O corpo deste ciclo corre por cada processo filho que termina, ou seja, por cada pedido que termina.
             Dado que um pedido acaba de ser terminado, é preciso remover o pedido do conjunto de pedidos a serem executados

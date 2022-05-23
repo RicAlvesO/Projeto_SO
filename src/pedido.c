@@ -447,6 +447,7 @@ void executarPedido(PEDIDO p, char* folder_path) {
         _exit(0);
     } else {
         //enquanto o filho executa o pedido, o pai continua a execuçao, atribuindo o pid do processo ao pedido que ele executa.
+        printf("[PEDIDO]: pedido pid: %d\n", pid);
         setPid(p,pid);
     }
 }
