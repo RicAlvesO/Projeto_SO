@@ -32,4 +32,4 @@ obj/sdstore.o: src/sdstore.c
 	gcc -Wall -g -c src/sdstore.c -o obj/sdstore.o
 
 clean:
-	rm -f obj/*.o tmp/* bin/{sdstore,sdstored} fifos/*
+	rm -f obj/*.o tmp/* bin/{sdstore,sdstored} fifos/* nohup.out tests/test_o.txt in/test.conf

@@ -1,0 +1,3 @@
+Test File
+
+The contents of this file are supposed to serve as an example of output of the program.
