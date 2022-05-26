@@ -4,7 +4,6 @@
 #include "../libs/ll_pedidos.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h> //open
 
