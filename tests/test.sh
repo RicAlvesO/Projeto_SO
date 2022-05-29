@@ -63,8 +63,9 @@ function bdecompress(){
 
 function gcompress(){
     np="$(./bin/sdstore proc-file tests/test_i.txt tests/test_o.txt gcompress | tr '\0' '\n')"
+    cat tests/test_o.txt > tests/test_gc.txt
     expected_np="$( echo -e "processing\nconcluded (bytes-input: 98, bytes-output: 98)")"
-    if echo "${stat}" | grep -q "${expected_stat}" && cmp --silent -- tests/test_gc.txt tests/test_o.txt ; then
+    if  echo "${stat}" | grep -q "${expected_stat}" && cmp --silent -- tests/test_gc.txt tests/test_o.txt ; then
         echo "GCOMPRESS: Passed!"
     else
         echo "GCOMPRESS: Failed!"
