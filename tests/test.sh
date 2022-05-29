@@ -124,5 +124,7 @@ bcompress
 bdecompress
 gcompress
 gdecompress
+encrypt
+decrypt
 kill ${spid}
 close
