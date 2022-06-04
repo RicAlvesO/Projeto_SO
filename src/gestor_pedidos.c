@@ -4,6 +4,7 @@
 #include "../libs/ll_pedidos.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h> //open
 
@@ -128,7 +129,12 @@ Depois percorre todos os pedidos a serem executados no gestor de pedidos e encon
 e elimina-o do gestor.
 */
 void removerPedido(GESTOR_PEDIDOS gp, int pidPedido) {
-    removerNodo(&(gp->pedidosExecucao),pidPedido);
+    NODO nodo = removerNodo(&(gp->pedidosExecucao),pidPedido);
+    if (nodo == NULL) return;
+    PEDIDO pedido = getNodoPedido(nodo);
+    changeOcorrenciasTransformacoes(gp->atual, pedido, 0);
+    while (tryInserirPedido(gp));
+
 }
 
 char* getAllPedidosStr(GESTOR_PEDIDOS gp, int *tamanhoString) {
@@ -171,7 +177,7 @@ void createAtualArray(GESTOR_PEDIDOS gp) {
     while (aux != NULL) {
         //Para cada pedido no conjunto de pedidos em execucao, incrementa no atualArray a utilizaçao de transformaçoes do pedido
         PEDIDO pedidoAtual = getNodoPedido(aux);
-        addOcorrenciasTransformacoes(atualArray, pedidoAtual);
+        changeOcorrenciasTransformacoes(atualArray, pedidoAtual, 1);
         aux = getProxNodo(aux);
     }
 }

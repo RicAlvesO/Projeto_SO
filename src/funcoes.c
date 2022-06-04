@@ -4,6 +4,15 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include "../libs/pedido.h"
+
+#define PATH "fifos/"
+#define CLIENT_PRODUCER_SUFFIX "cliente_produtor"
+#define CLIENT_CONSUMER_SUFFIX "cliente_consumidor"
+int SENDING_PEDIDO = 0;
+int PEDIDO_ACABOU = 1;
+int REQUEST_SERVER_STATUS = 2;
+
 
 // Reads char from certain file descriptor
 int readChar(int fd, char* c) {
@@ -64,4 +73,43 @@ int contarBytes(char* path) {
 
     wait(&status); //espera pelo filho
     return atoi(bytesRecebidas);
+}
+
+/*
+Esta função recebe o pid de um processo, e um boleano que representa se o cliente é produtor no fifo, ou se é consumidor,
+e cria o caminho para o fifo
+*/
+char * getPrivateFifoPath(pid_t pid, int isClienteProducer) {
+    int sum = 0;
+    sum += strlen(PATH);
+
+    if (isClienteProducer) sum += strlen(CLIENT_PRODUCER_SUFFIX);
+    else sum += strlen(CLIENT_CONSUMER_SUFFIX);
+
+    char buffer[20]; //should be enough for the length of the pid
+    sprintf(buffer, "%d", pid);
+    sum += strlen(buffer);
+
+    char * path = malloc(sizeof(char) * (sum + 1));
+    path[0] = '\0';
+    strcat(path, PATH);
+    strcat(path, buffer);
+
+    if (isClienteProducer) strcat(path, CLIENT_PRODUCER_SUFFIX);
+    else strcat(path, CLIENT_CONSUMER_SUFFIX);
+    
+    return path;
+}
+
+void pedidoAcabou(int fd) {
+    write(fd, &PEDIDO_ACABOU, sizeof(int));
+}
+
+void requestServerStatus(int fd) {
+    write(fd, &REQUEST_SERVER_STATUS, sizeof(int));
+}
+
+void sendingPedido(int fd, PEDIDO pedido) {
+    write(fd, &SENDING_PEDIDO, sizeof(int));
+    writePedido(pedido,fd); //escreve o pedido, estando o servidor pronto a recebe-lo.
 }

@@ -9,21 +9,15 @@
 #include "../libs/servidor.h"
 #include "../libs/pedido.h"
 #include "../libs/funcoes.h"
+#include "../libs/pacote.h"
 
 int main(int argc, char* argv[]) {
-    int fdProdutor, fdConsumidor, x, i=0;
-    char myfifo[128], fifoProdutor[128], fifoConsumidor[128];
-    myfifo[0] = '\0';
+    int fdProdutor, fdConsumidor, i=0;
     char* fifo_geral = "fifos/fifo_geral";
-    char pidStr[20];
-    int pid = getpid();
-    sprintf(pidStr,"%d", pid);
-    strcat(myfifo, "fifos/fifo");
-    strcat(myfifo, pidStr);
-    strcpy(fifoProdutor, myfifo);
-    strcpy(fifoConsumidor, myfifo);
-    strcat(fifoProdutor, "-cliente_produtor");
-    strcat(fifoConsumidor, "-cliente_consumidor");
+    pid_t pid = getpid();
+
+    char* fifoProdutor = getPrivateFifoPath(pid,1);
+    char* fifoConsumidor = getPrivateFifoPath(pid,0);
     //return 0;
 
     mkfifo(fifo_geral,0666);
@@ -50,15 +44,11 @@ int main(int argc, char* argv[]) {
             write(2, "O servidor nao aceita pedidos de momento\n", 42);
             return 1;
         }
-        write (fdProdutor, myfifo, sizeof(myfifo)); //maximo 128 caracteres
+        PACOTE pacote = createServerStatusPacote(pid);
+        writePacote(pacote, fdProdutor);
+        freePacote(&pacote);
         close(fdProdutor);
-        fdProdutor = open(fifoProdutor, O_WRONLY);
         fdConsumidor = open(fifoConsumidor, O_RDONLY);
-        x=0;
-        write(fdProdutor,&x,sizeof(int)); //avisa o servidor que precisa do estado do servidor
-        close(fdProdutor);
-        //do outro lado do fifo, o servidor está a ouvir um inteiro
-        //ao receber o numero 0, ele associa o numero 0 ao mostrar o status do servidor
 
         SERVER server = readServer(fdConsumidor);
         printServerStatus(server); //queremos que o server dê print no terminal do cliente
@@ -76,11 +66,13 @@ int main(int argc, char* argv[]) {
             write(2, "O servidor nao aceita pedidos de momento\n", 42);
             return 1;
         }
-
-        write (fdProdutor, myfifo, sizeof(myfifo)); //maximo 128 caracteres
+        PACOTE pacote = createSendingPedidoPacote(pid);
+        writePacote(pacote, fdProdutor);
+        //write(fdProdutor, &pid, sizeof(pid_t));
         close(fdProdutor);
         fdProdutor = open(fifoProdutor, O_WRONLY);
-        fdConsumidor = open(fifoConsumidor, O_RDONLY);
+        //int x = 1;
+        //write(fdProdutor, &x, sizeof(int));
 
         int cur=2,priority=1;
         if(strcmp(argv[cur],"-p")==0){
@@ -99,14 +91,11 @@ int main(int argc, char* argv[]) {
             transformacoes[i] = argv[i + cur];
         }
         PEDIDO pedido = createPedido(priority, inputPath, outputPath, ntransf, transformacoes); i++;
-
-        //fdProdutor = open(fifo_geral, O_WRONLY);
-        x=1;
-        write(fdProdutor,&x,sizeof(int)); //escreve um 1 para o servidor, indicando que vem ai um pedido
-        writePedido(pedido,fdProdutor); //escreve o pedido, estando o servidor pronto a recebe-lo.
+        writePedido(pedido, fdProdutor);
         close(fdProdutor);
 
         char buffer[128];
+        fdConsumidor = open(fifoConsumidor, O_RDONLY);
         while (readln(fdConsumidor, buffer, 128) > 0) {
             /*
             Enquanto o servidor nao fecha o fifo, o cliente recebe mensagens do tipo 'pending', 'processing', etc,

@@ -4,8 +4,8 @@ server: bin/sdstored
 
 client: bin/sdstore
 
-bin/sdstored: obj/sdstored.o obj/servidor.o obj/funcoes.o obj/pedido.o obj/gestor_pedidos.o obj/ll_pedidos.o
-	gcc -g -o bin/sdstored obj/sdstored.o obj/servidor.o obj/funcoes.o obj/pedido.o obj/gestor_pedidos.o obj/ll_pedidos.o
+bin/sdstored: obj/sdstored.o obj/servidor.o obj/funcoes.o obj/pedido.o obj/gestor_pedidos.o obj/ll_pedidos.o obj/pacote.o
+	gcc -g -o bin/sdstored obj/sdstored.o obj/servidor.o obj/funcoes.o obj/pedido.o obj/gestor_pedidos.o obj/ll_pedidos.o obj/pacote.o
 
 obj/sdstored.o: src/sdstored.c
 	gcc -Wall -g -c src/sdstored.c -o obj/sdstored.o
@@ -25,8 +25,11 @@ obj/gestor_pedidos.o: src/gestor_pedidos.c libs/gestor_pedidos.h
 obj/funcoes.o: src/funcoes.c libs/funcoes.h
 	gcc -Wall -g -c src/funcoes.c -o obj/funcoes.o
 
-bin/sdstore: obj/sdstore.o obj/servidor.o obj/funcoes.o obj/pedido.o obj/gestor_pedidos.o obj/ll_pedidos.o
-	gcc -g -o bin/sdstore obj/sdstore.o obj/servidor.o obj/funcoes.o obj/pedido.o obj/gestor_pedidos.o obj/ll_pedidos.o
+obj/pacote.o: src/pacote.c libs/pacote.h
+	gcc -Wall -g -c src/pacote.c -o obj/pacote.o
+
+bin/sdstore: obj/sdstore.o obj/servidor.o obj/funcoes.o obj/pedido.o obj/gestor_pedidos.o obj/ll_pedidos.o obj/pacote.o
+	gcc -g -o bin/sdstore obj/sdstore.o obj/servidor.o obj/funcoes.o obj/pedido.o obj/gestor_pedidos.o obj/ll_pedidos.o obj/pacote.o
 
 obj/sdstore.o: src/sdstore.c
 	gcc -Wall -g -c src/sdstore.c -o obj/sdstore.o

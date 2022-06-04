@@ -1,3 +1,4 @@
+#include <unistd.h>
 
 typedef struct pedido *PEDIDO;
 
@@ -16,7 +17,7 @@ void writePedido(PEDIDO pedido, int fd);
 PEDIDO readPedido(int fd);
 void printPedido(PEDIDO p);
 int getTamanhoPedidoStr(PEDIDO p);
-int getPidPedido(PEDIDO p);
+pid_t getPidPedido(PEDIDO p);
 int getPrioridade(PEDIDO p);
 char* getPedidoStr(PEDIDO p);
 int getNTransformacoes(PEDIDO p);
@@ -32,6 +33,8 @@ void alertPedidoEmEspera(PEDIDO p);
 void alertPedidoInserido(PEDIDO p);
 void alertPedidoConcluido(PEDIDO p, int bytesIn, int bytesOut);
 PEDIDO encontrarPedido(PEDIDO* pedidos, int N, int pid);
-void addOcorrenciasTransformacoes(int* atualArray, PEDIDO p);
+void changeOcorrenciasTransformacoes(int* atualArray, PEDIDO p, int adicionar);
 int executaTransformacao(char* path, int transformacao);
 void executarPedido(PEDIDO p, char* folder_path);
+void printPedidoInputPath(PEDIDO p);
+void setPedidoFifoGeral(PEDIDO p, int fd);

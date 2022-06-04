@@ -37,7 +37,7 @@ Esta função recebe uma lista ligada ordenada por prioridade dos pedidos, e o p
 e simplesmente remove o tal pedido, mantendo a ordem da lista.
 Se nao encontrar nenhum pedido com o pid dado, não altera a lista ligada.
 */
-void removerNodo(NODO* cabeca_ll, int pidPedido) {
+NODO removerNodo(NODO* cabeca_ll, int pidPedido) {
 
     while ((*cabeca_ll != NULL) && (getPidPedido((*cabeca_ll)->pedido) != pidPedido)) {
         cabeca_ll = &((*cabeca_ll)->prox);
@@ -47,8 +47,10 @@ void removerNodo(NODO* cabeca_ll, int pidPedido) {
         NODO nodoRemovido = *cabeca_ll;
         *cabeca_ll = (*cabeca_ll)->prox;
         nodoRemovido->prox = NULL;
+        return nodoRemovido;
         //freeNodo(nodoRemovido);
     }
+    return NULL;
 }
 
 /*
@@ -57,6 +59,15 @@ Recebe um nodo e da free apenas ao nodo dado (nao da free aos nodos seguintes);
 void freeNodo(NODO nodo) {
     free_pedido(nodo->pedido);
     free(nodo);
+}
+
+PEDIDO getPedido(NODO nodo, pid_t pid) {
+    if (nodo == NULL) return NULL;
+    if (getPidPedido(nodo->pedido) == pid) {
+        return nodo->pedido;
+    } else {
+        return getPedido(nodo->prox, pid);
+    }
 }
 
 /*

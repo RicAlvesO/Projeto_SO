@@ -1,16 +1,18 @@
 #include "../libs/pedido.h"
 #include "../libs/funcoes.h"
+#include "../libs/pacote.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 #define MAX_TRANSFORMATION_SIZE 20
 
 struct pedido{
-    int pid; //pid do processo que esta a realizar o pedido.
+    pid_t pid; //pid do processo que esta a realizar o pedido.
     int nth; //quantos pedidos fizeram antes deste + 1
     /*
     int usadas[10]; -> guarda a quantidade de cada transformação que o pedido usa.
@@ -21,6 +23,7 @@ struct pedido{
     char outputPath[128];
     char clienteFifoStr[128]; //string que contem o caminho para o fifo de escrita de onde o cliente vai ler
     int fdCliente; //file descriptor do cliente
+    int fdFifoGeral;
     int ntransformacoes; //numero de transformacoes
     int *transformacoes; //nao sabemos quantas transformações existem, mas cada uma tem 20 chars de tamanho no maximo
 };
@@ -138,7 +141,7 @@ int getPrioridade(PEDIDO p) {
     return p->prioridade;
 }
 
-int getPidPedido(PEDIDO p) {
+pid_t getPidPedido(PEDIDO p) {
     return p->pid;
 }
 
@@ -274,16 +277,19 @@ PEDIDO encontrarPedido(PEDIDO* pedidos, int N, int pid) {
 }
 
 /*
-Recebe um array de transformacoes atuais, e um pedido, e incrementa no array as transformacoes que o pedido usa.
-Para cada transformacao, incrementa o indice da mesma no array.
+Recebe um array de transformacoes atuais, e um pedido, e incrementa ou decrementa no array as transformacoes
+que o pedido usa, conforme o valor do boleano 'adicionar'.
 */
-void addOcorrenciasTransformacoes(int* atualArray, PEDIDO p) {
+void changeOcorrenciasTransformacoes(int* atualArray, PEDIDO p, int adicionar) {
     int ntransf = p->ntransformacoes, i;
     int* transfs = p->transformacoes;
+    int x;
+    if (adicionar) x = 1;
+    else x = -1;
 
     for (i = 0; i < ntransf; i++) {
         int transformacaoAtual = transfs[i];
-        atualArray[transformacaoAtual]++;
+        atualArray[transformacaoAtual] += x;
     }
 }
 
@@ -313,10 +319,12 @@ void executarPedido(PEDIDO p, char* folder_path) {
         int inputFd;
         int outputFd;
         if ((inputFd = open(p->inputPath, O_RDONLY, 0666)) == -1) {
+            write(p->fdCliente, "end\n", 4);
             write(2, "Erro a abrir ficheiro input\n",29);
             perror("erro: ");
         }
         if ((outputFd = open(p->outputPath, O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1) {
+            write(p->fdCliente, "end\n", 4);
             write(2, "Erro a abrir ficheiro output\n", 30);
         }
         int pipes[ntransf-1][2];
@@ -429,19 +437,27 @@ void executarPedido(PEDIDO p, char* folder_path) {
             }
         }
 
-        
-
         for (i = 0; i < ntransf; i++) {
             wait(&status[i]);
         }
-        int bytesIn = contarBytes(p->inputPath); //bytes input
-        int bytesOut = contarBytes(p->outputPath); //bytes output
+        int bytesIn = lseek(inputFd, 0, SEEK_END);
+        int bytesOut = lseek(outputFd, 0, SEEK_END);
         close(inputFd);
         close(outputFd);
         alertPedidoConcluido(p, bytesIn, bytesOut);
+        PACOTE pacote = createPedidoFinishedPacote(getpid());
+        writePacote(pacote, p->fdFifoGeral);
         _exit(0);
     } else {
         //enquanto o filho executa o pedido, o pai continua a execuçao, atribuindo o pid do processo ao pedido que ele executa.
         setPid(p,pid);
     }
+}
+
+void printPedidoInputPath(PEDIDO p) {
+    printf("%s\n", p->inputPath);
+}
+
+void setPedidoFifoGeral(PEDIDO p, int fd) {
+    p->fdFifoGeral = fd;
 }
